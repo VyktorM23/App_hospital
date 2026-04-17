@@ -1,4 +1,4 @@
-// app.js - Sistema de control de asistencia con validación completa
+// app.js - Sistema de control de asistencia
 
 let deferredPrompt;
 let videoStream = null;
@@ -50,7 +50,7 @@ const buttonsContainer = document.querySelector('.buttons-container');
 
 let cameraPermissionGranted = false;
 
-// Credenciales de acceso (puedes cambiarlas)
+// Credenciales de acceso
 const ADMIN_CREDENTIALS = {
     username: 'admin',
     password: 'admin123'
@@ -70,146 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     precargarCamara();
-    verificarSesion();
+    mostrarPantallaPrincipal(); // Mostrar pantalla principal sin pedir login
 });
-
-function verificarSesion() {
-    const sesionGuardada = localStorage.getItem('userSession');
-    if (sesionGuardada) {
-        try {
-            const session = JSON.parse(sesionGuardada);
-            if (session.expires > Date.now()) {
-                isLoggedIn = true;
-                currentUser = session.username;
-                mostrarPantallaPrincipal();
-            } else {
-                localStorage.removeItem('userSession');
-                mostrarPantallaLogin();
-            }
-        } catch (e) {
-            mostrarPantallaLogin();
-        }
-    } else {
-        mostrarPantallaLogin();
-    }
-}
-
-function mostrarPantallaLogin() {
-    hospitalTitle.style.display = 'block';
-    buttonsContainer.style.display = 'none';
-    actionSelectionScreen.style.display = 'none';
-    historyScreen.style.display = 'none';
-    resultContainer.style.display = 'none';
-    registerScreen.style.display = 'none';
-    loginScreen.style.display = 'flex';
-    employeesScreen.style.display = 'none';
-}
-
-function mostrarPantallaPrincipal() {
-    hospitalTitle.style.display = 'block';
-    buttonsContainer.style.display = 'flex';
-    actionSelectionScreen.style.display = 'none';
-    historyScreen.style.display = 'none';
-    resultContainer.style.display = 'none';
-    registerScreen.style.display = 'none';
-    loginScreen.style.display = 'none';
-    employeesScreen.style.display = 'none';
-}
-
-function mostrarPantallaEmpleados() {
-    hospitalTitle.style.display = 'none';
-    buttonsContainer.style.display = 'none';
-    actionSelectionScreen.style.display = 'none';
-    historyScreen.style.display = 'none';
-    resultContainer.style.display = 'none';
-    registerScreen.style.display = 'none';
-    loginScreen.style.display = 'none';
-    employeesScreen.style.display = 'flex';
-    actualizarListaEmpleados();
-}
-
-function actualizarListaEmpleados() {
-    employeesList.innerHTML = '';
-    
-    if (registeredEmployees.length === 0) {
-        employeesList.innerHTML = '<div class="no-data">No hay empleados registrados</div>';
-        return;
-    }
-    
-    registeredEmployees.forEach(empleado => {
-        const item = document.createElement('div');
-        item.className = 'employee-item';
-        item.innerHTML = `
-            <div class="employee-info">
-                <div class="employee-name">${empleado.nombre}</div>
-                <div class="employee-details">
-                    <span class="employee-id">📄 C.I: ${empleado.empleado_id}</span>
-                    <span class="employee-institution">🏥 ${empleado.institucion}</span>
-                </div>
-                <div class="employee-date">📅 Registrado: ${new Date(empleado.fecha_registro).toLocaleDateString()}</div>
-            </div>
-            <button class="btn-delete-employee" data-id="${empleado.empleado_id}">🗑️ Eliminar</button>
-        `;
-        employeesList.appendChild(item);
-    });
-    
-    // Agregar eventos de eliminar
-    document.querySelectorAll('.btn-delete-employee').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const empleadoId = btn.getAttribute('data-id');
-            eliminarEmpleado(empleadoId);
-        });
-    });
-}
-
-function eliminarEmpleado(empleadoId) {
-    if (confirm('¿Estás seguro de eliminar este empleado? Se perderá su historial de asistencia.')) {
-        // Eliminar empleado
-        registeredEmployees = registeredEmployees.filter(emp => emp.empleado_id !== empleadoId);
-        // Eliminar su historial de asistencia
-        attendanceHistory = attendanceHistory.filter(reg => reg.cedula !== empleadoId);
-        
-        guardarEmpleados();
-        guardarHistorial();
-        actualizarListaEmpleados();
-        mostrarToast('Empleado eliminado correctamente', 'success');
-    }
-}
-
-function iniciarSesion(e) {
-    e.preventDefault();
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
-    
-    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-        isLoggedIn = true;
-        currentUser = username;
-        
-        // Guardar sesión por 8 horas
-        const session = {
-            username: username,
-            expires: Date.now() + (8 * 60 * 60 * 1000)
-        };
-        localStorage.setItem('userSession', JSON.stringify(session));
-        
-        mostrarPantallaPrincipal();
-        loginError.style.display = 'none';
-        document.getElementById('username').value = '';
-        document.getElementById('password').value = '';
-    } else {
-        loginError.style.display = 'block';
-        loginError.textContent = '❌ Usuario o contraseña incorrectos';
-    }
-}
-
-function cerrarSesion() {
-    isLoggedIn = false;
-    currentUser = null;
-    localStorage.removeItem('userSession');
-    mostrarPantallaLogin();
-    mostrarToast('Sesión cerrada correctamente', 'info');
-}
 
 function cargarDatos() {
     const historialGuardado = localStorage.getItem('attendanceHistory');
@@ -240,6 +102,112 @@ function guardarEmpleados() {
 
 function guardarHistorial() {
     localStorage.setItem('attendanceHistory', JSON.stringify(attendanceHistory));
+}
+
+function mostrarPantallaPrincipal() {
+    hospitalTitle.style.display = 'block';
+    buttonsContainer.style.display = 'flex';
+    actionSelectionScreen.style.display = 'none';
+    historyScreen.style.display = 'none';
+    resultContainer.style.display = 'none';
+    registerScreen.style.display = 'none';
+    loginScreen.style.display = 'none';
+    employeesScreen.style.display = 'none';
+}
+
+function mostrarPantallaLogin() {
+    hospitalTitle.style.display = 'none';
+    buttonsContainer.style.display = 'none';
+    actionSelectionScreen.style.display = 'none';
+    historyScreen.style.display = 'none';
+    resultContainer.style.display = 'none';
+    registerScreen.style.display = 'none';
+    loginScreen.style.display = 'flex';
+    employeesScreen.style.display = 'none';
+    loginError.style.display = 'none';
+    document.getElementById('username').value = '';
+    document.getElementById('password').value = '';
+}
+
+function mostrarPantallaEmpleados() {
+    hospitalTitle.style.display = 'none';
+    buttonsContainer.style.display = 'none';
+    actionSelectionScreen.style.display = 'none';
+    historyScreen.style.display = 'none';
+    resultContainer.style.display = 'none';
+    registerScreen.style.display = 'none';
+    loginScreen.style.display = 'none';
+    employeesScreen.style.display = 'flex';
+    actualizarListaEmpleados();
+}
+
+function actualizarListaEmpleados() {
+    employeesList.innerHTML = '';
+    
+    if (registeredEmployees.length === 0) {
+        employeesList.innerHTML = '<div class="no-data">📭 No hay empleados registrados</div>';
+        return;
+    }
+    
+    registeredEmployees.forEach(empleado => {
+        const item = document.createElement('div');
+        item.className = 'employee-item';
+        item.innerHTML = `
+            <div class="employee-info">
+                <div class="employee-name">👤 ${empleado.nombre}</div>
+                <div class="employee-details">
+                    <span class="employee-id">📄 C.I: ${empleado.empleado_id}</span>
+                    <span class="employee-institution">🏥 ${empleado.institucion}</span>
+                </div>
+                <div class="employee-date">📅 Registrado: ${new Date(empleado.fecha_registro).toLocaleDateString()}</div>
+            </div>
+            <button class="btn-delete-employee" data-id="${empleado.empleado_id}">🗑️ Eliminar</button>
+        `;
+        employeesList.appendChild(item);
+    });
+    
+    document.querySelectorAll('.btn-delete-employee').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const empleadoId = btn.getAttribute('data-id');
+            eliminarEmpleado(empleadoId);
+        });
+    });
+}
+
+function eliminarEmpleado(empleadoId) {
+    if (confirm('¿Estás seguro de eliminar este empleado? Se perderá su historial de asistencia.')) {
+        registeredEmployees = registeredEmployees.filter(emp => emp.empleado_id !== empleadoId);
+        attendanceHistory = attendanceHistory.filter(reg => reg.cedula !== empleadoId);
+        
+        guardarEmpleados();
+        guardarHistorial();
+        actualizarListaEmpleados();
+        mostrarToast('Empleado eliminado correctamente', 'success');
+    }
+}
+
+function iniciarSesion(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    
+    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+        isLoggedIn = true;
+        currentUser = username;
+        mostrarPantallaEmpleados();
+        mostrarToast(`Bienvenido ${username}`, 'success');
+    } else {
+        loginError.style.display = 'block';
+        loginError.textContent = '❌ Usuario o contraseña incorrectos';
+    }
+}
+
+function cerrarSesion() {
+    isLoggedIn = false;
+    currentUser = null;
+    mostrarPantallaPrincipal();
+    mostrarToast('Sesión cerrada', 'info');
 }
 
 function mostrarToast(mensaje, tipo = 'error') {
@@ -313,14 +281,7 @@ function configurarBotones() {
     }
     
     if (backFromLoginBtn) {
-        backFromLoginBtn.addEventListener('click', () => {
-            if (isLoggedIn) {
-                mostrarPantallaPrincipal();
-            } else {
-                // Si no hay sesión, solo cerrar login
-                mostrarPantallaLogin();
-            }
-        });
+        backFromLoginBtn.addEventListener('click', mostrarPantallaPrincipal);
     }
     
     if (backFromEmployeesBtn) {
@@ -353,6 +314,7 @@ function iniciarRegistroEmpleado() {
     resultContainer.style.display = 'none';
     registerScreen.style.display = 'none';
     employeesScreen.style.display = 'none';
+    loginScreen.style.display = 'none';
     iniciarEscaneo();
 }
 
@@ -364,6 +326,7 @@ function mostrarPantallaAccion() {
     resultContainer.style.display = 'none';
     registerScreen.style.display = 'none';
     employeesScreen.style.display = 'none';
+    loginScreen.style.display = 'none';
     container.style.justifyContent = 'center';
 }
 
@@ -375,6 +338,7 @@ function mostrarHistorial() {
     resultContainer.style.display = 'none';
     registerScreen.style.display = 'none';
     employeesScreen.style.display = 'none';
+    loginScreen.style.display = 'none';
     container.style.justifyContent = 'center';
     actualizarListaHistorial();
 }
@@ -386,6 +350,7 @@ function volverInicio() {
     resultContainer.style.display = 'none';
     registerScreen.style.display = 'none';
     employeesScreen.style.display = 'none';
+    loginScreen.style.display = 'none';
     videoContainer.style.display = 'none';
     buttonsContainer.style.display = 'flex';
     container.style.justifyContent = 'center';
@@ -405,7 +370,7 @@ function actualizarListaHistorial() {
     const ultimosRegistros = [...attendanceHistory].reverse().slice(0, 10);
     
     if (ultimosRegistros.length === 0) {
-        historyList.innerHTML = '<div class="no-history">No hay registros de asistencia</div>';
+        historyList.innerHTML = '<div class="no-history">📭 No hay registros de asistencia</div>';
         return;
     }
     
@@ -436,6 +401,7 @@ function iniciarEscaneoConAccion(accion) {
     resultContainer.style.display = 'none';
     registerScreen.style.display = 'none';
     employeesScreen.style.display = 'none';
+    loginScreen.style.display = 'none';
     iniciarEscaneo();
 }
 
@@ -552,7 +518,6 @@ function realizarEscaneo() {
 }
 
 function procesarQR(data) {
-    // Detener escaneo inmediatamente
     scanningActive = false;
     
     if (scanTimeout) {
@@ -579,7 +544,6 @@ function procesarQR(data) {
         window.navigator.vibrate(200);
     }
     
-    // Parsear el QR
     let qrData = null;
     
     try {
@@ -591,27 +555,23 @@ function procesarQR(data) {
         return;
     }
     
-    // VALIDAR tipo
     if (!qrData.tipo || qrData.tipo !== 'registro_asistencia') {
         mostrarToast('❌ QR no válido: Este código no es para registro de asistencia', 'error');
         volverInicio();
         return;
     }
     
-    // Validar campos requeridos
     if (!qrData.empleado_id || !qrData.nombre) {
-        mostrarToast('❌ QR no válido: Faltan datos del empleado (empleado_id o nombre)', 'error');
+        mostrarToast('❌ QR no válido: Faltan datos del empleado', 'error');
         volverInicio();
         return;
     }
     
-    // Modo REGISTRO
     if (currentAction === 'registro') {
         registrarNuevoEmpleado(qrData);
         return;
     }
     
-    // Modo ENTRADA o SALIDA
     if (currentAction === 'entrada' || currentAction === 'salida') {
         procesarAsistencia(qrData);
         return;
@@ -619,7 +579,6 @@ function procesarQR(data) {
 }
 
 function registrarNuevoEmpleado(qrData) {
-    // Verificar si ya existe
     const empleadoExistente = registeredEmployees.find(emp => emp.empleado_id === qrData.empleado_id);
     
     if (empleadoExistente) {
@@ -628,7 +587,6 @@ function registrarNuevoEmpleado(qrData) {
         return;
     }
     
-    // Registrar nuevo empleado
     const nuevoEmpleado = {
         empleado_id: qrData.empleado_id,
         nombre: qrData.nombre,
@@ -641,7 +599,6 @@ function registrarNuevoEmpleado(qrData) {
     
     mostrarToast(`✅ Empleado ${nuevoEmpleado.nombre} registrado correctamente`, 'success');
     
-    // Mostrar pantalla de éxito
     hospitalTitle.style.display = 'none';
     buttonsContainer.style.display = 'none';
     actionSelectionScreen.style.display = 'none';
@@ -674,7 +631,6 @@ function registrarNuevoEmpleado(qrData) {
 }
 
 function procesarAsistencia(qrData) {
-    // Buscar empleado registrado
     const empleado = registeredEmployees.find(emp => emp.empleado_id === qrData.empleado_id);
     
     if (!empleado) {
@@ -683,7 +639,6 @@ function procesarAsistencia(qrData) {
         return;
     }
     
-    // Verificar coincidencia de nombre
     if (empleado.nombre !== qrData.nombre) {
         mostrarToast(`❌ DATOS INCONSISTENTES\nEl nombre del QR no coincide con el registro`, 'error');
         volverInicio();
@@ -709,7 +664,6 @@ function procesarAsistencia(qrData) {
     
     mostrarToast(`✅ ${accionTexto} registrada para ${empleado.nombre}`, 'success');
     
-    // Mostrar resultado
     hospitalTitle.style.display = 'none';
     buttonsContainer.style.display = 'none';
     actionSelectionScreen.style.display = 'none';
