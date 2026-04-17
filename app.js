@@ -599,11 +599,14 @@ function registrarNuevoEmpleado(qrData) {
     
     mostrarToast(`✅ Empleado ${nuevoEmpleado.nombre} registrado correctamente`, 'success');
     
+    // Mostrar pantalla completa de registro exitoso
     hospitalTitle.style.display = 'none';
     buttonsContainer.style.display = 'none';
     actionSelectionScreen.style.display = 'none';
     historyScreen.style.display = 'none';
     resultContainer.style.display = 'none';
+    employeesScreen.style.display = 'none';
+    loginScreen.style.display = 'none';
     registerScreen.style.display = 'flex';
     
     registerResult.innerHTML = `
@@ -626,8 +629,18 @@ function registrarNuevoEmpleado(qrData) {
                     <span class="field-value">${nuevoEmpleado.institucion}</span>
                 </div>
             </div>
+            <div class="result-footer">
+                <button id="back-to-home-register-btn" class="btn btn-primary result-home-btn">
+                    ← VOLVER AL INICIO
+                </button>
+            </div>
         </div>
     `;
+    
+    const backBtn = document.getElementById('back-to-home-register-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', volverInicio);
+    }
 }
 
 function procesarAsistencia(qrData) {
@@ -664,15 +677,17 @@ function procesarAsistencia(qrData) {
     
     mostrarToast(`✅ ${accionTexto} registrada para ${empleado.nombre}`, 'success');
     
+    // Mostrar pantalla completa de resultado
     hospitalTitle.style.display = 'none';
     buttonsContainer.style.display = 'none';
     actionSelectionScreen.style.display = 'none';
     historyScreen.style.display = 'none';
     registerScreen.style.display = 'none';
     employeesScreen.style.display = 'none';
+    loginScreen.style.display = 'none';
     container.style.justifyContent = 'center';
     
-    resultContainer.style.display = 'block';
+    resultContainer.style.display = 'flex';
     scanResult.innerHTML = `
         <div class="result-card">
             <div class="result-header" style="background: ${colorAccion};">
@@ -698,14 +713,14 @@ function procesarAsistencia(qrData) {
                 </div>
             </div>
             <div class="result-footer">
-                <button id="back-to-home-btn" class="btn btn-primary result-home-btn">
+                <button id="back-to-home-result-btn" class="btn btn-primary result-home-btn">
                     ← VOLVER AL INICIO
                 </button>
             </div>
         </div>
     `;
     
-    const backBtn = document.getElementById('back-to-home-btn');
+    const backBtn = document.getElementById('back-to-home-result-btn');
     if (backBtn) {
         backBtn.addEventListener('click', volverInicio);
     }
