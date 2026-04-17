@@ -1,0 +1,677 @@
+/* Estilos generales */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    background: #0066B3;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    margin: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Título */
+.hospital-title {
+    color: white;
+    font-size: 48px;
+    font-weight: 800;
+    text-align: center;
+    line-height: 1.2;
+    padding: 40px 20px 20px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+    background: transparent;
+    pointer-events: none;
+}
+
+/* Contenedor principal */
+.container {
+    width: 100%;
+    max-width: 400px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0 20px;
+    margin: 0 auto;
+    background: transparent;
+    overflow: hidden;
+}
+
+/* Contenedor de botones */
+.buttons-container {
+    width: 100%;
+    max-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Estilo de los botones */
+.btn {
+    width: 100%;
+    padding: 18px 24px;
+    border: none;
+    border-radius: 50px;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    background: white;
+    color: #0066B3;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    text-transform: uppercase;
+}
+
+.btn:hover {
+    background: #f0f0f0;
+    transform: translateY(-3px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+}
+
+.btn:active {
+    transform: translateY(-1px);
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Botón secundario */
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.9);
+    color: #0066B3;
+    font-size: 18px;
+    padding: 14px 20px;
+}
+
+/* Estilos para el escáner */
+body.scanning-active {
+    background: black;
+}
+
+body.scanning-active .hospital-title {
+    display: none;
+}
+
+body.scanning-active .container {
+    justify-content: flex-start;
+    padding: 0;
+    background: transparent;
+}
+
+body.scanning-active .buttons-container {
+    display: none;
+}
+
+body.scanning-active #video-container {
+    display: flex !important;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background: black;
+    z-index: 1000;
+}
+
+#qr-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: black;
+}
+
+.video-controls {
+    position: fixed;
+    bottom: 40px;
+    left: 20px;
+    right: 20px;
+    z-index: 1001;
+}
+
+/* Overlay de escaneo */
+.scanning-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 1002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scanning-frame {
+    width: min(70vw, 300px);
+    height: min(70vw, 300px);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 20px;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+    position: relative;
+}
+
+.scanning-line {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: white;
+    box-shadow: 0 0 10px white;
+    animation: scan 2s linear infinite;
+    top: 0;
+}
+
+.scanning-instructions {
+    position: fixed;
+    top: 50px;
+    left: 20px;
+    right: 20px;
+    text-align: center;
+    color: white;
+    font-size: 16px;
+    font-weight: 500;
+    z-index: 1003;
+    background: #0066B3;
+    padding: 12px;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Pantalla de selección de acción */
+.action-selection-screen {
+    width: 100%;
+    max-width: 350px;
+    background: white;
+    border-radius: 30px;
+    padding: 30px 25px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.3s ease;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    z-index: 20;
+}
+
+.action-title {
+    color: #0066B3;
+    font-size: 24px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.action-buttons {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.action-btn {
+    font-size: 24px !important;
+    padding: 20px !important;
+    border: none !important;
+    color: white !important;
+    text-transform: uppercase;
+    font-weight: 800 !important;
+    letter-spacing: 2px;
+    transition: transform 0.2s ease !important;
+}
+
+.action-btn:hover {
+    transform: scale(1.05) !important;
+}
+
+.action-btn:active {
+    transform: scale(0.95) !important;
+}
+
+.entry-btn {
+    background: #4CAF50 !important;
+    box-shadow: 0 10px 20px rgba(76, 175, 80, 0.3) !important;
+}
+
+.exit-btn {
+    background: #f44336 !important;
+    box-shadow: 0 10px 20px rgba(244, 67, 54, 0.3) !important;
+}
+
+.back-btn {
+    background: #f0f0f0 !important;
+    color: #666 !important;
+    font-size: 18px !important;
+    padding: 15px !important;
+    margin-top: 10px;
+}
+
+/* Pantalla de historial */
+.history-screen {
+    width: 100%;
+    max-width: 350px;
+    background: white;
+    border-radius: 30px;
+    padding: 30px 25px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.3s ease;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    z-index: 20;
+}
+
+.history-title {
+    color: #0066B3;
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.history-list {
+    width: 100%;
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 5px;
+}
+
+.history-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.history-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+    background: #0066B3;
+    border-radius: 4px;
+}
+
+.history-item {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 15px;
+    border-left: 5px solid #0066B3;
+}
+
+.history-item.entrada {
+    border-left-color: #4CAF50;
+}
+
+.history-item.salida {
+    border-left-color: #f44336;
+}
+
+.history-nombre {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 3px;
+}
+
+.history-cedula {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.history-accion {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 5px;
+}
+
+.history-accion.entrada {
+    color: #4CAF50;
+}
+
+.history-accion.salida {
+    color: #f44336;
+}
+
+.history-fecha {
+    font-size: 12px;
+    color: #666;
+}
+
+.no-history {
+    text-align: center;
+    color: #999;
+    padding: 30px;
+    font-style: italic;
+}
+
+/* Resultado del escaneo */
+#result-container {
+    width: 100%;
+    max-width: 350px;
+    z-index: 30;
+    animation: fadeIn 0.3s ease;
+}
+
+.result-card {
+    background: white;
+    border-radius: 30px;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.result-header {
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.result-action-icon {
+    font-size: 36px;
+}
+
+.result-action-text {
+    font-size: 28px;
+    font-weight: 800;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.result-body {
+    padding: 25px;
+    background: #f8f9fa;
+}
+
+.result-field {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.result-field:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.field-label {
+    display: block;
+    font-size: 14px;
+    color: #0066B3;
+    font-weight: 600;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.field-value {
+    display: block;
+    font-size: 22px;
+    color: #333;
+    font-weight: 500;
+    word-break: break-word;
+}
+
+.result-time {
+    font-size: 32px;
+    font-weight: 700;
+    color: #0066B3;
+}
+
+.result-footer {
+    padding: 25px;
+    background: white;
+    border-top: 2px solid #f0f0f0;
+}
+
+.result-home-btn {
+    background: #0066B3 !important;
+    color: white !important;
+    font-size: 18px !important;
+    padding: 15px !important;
+    width: 100%;
+}
+
+.result-home-btn:hover {
+    background: #004c8c !important;
+}
+
+/* Canvas oculto */
+#qr-canvas {
+    display: none;
+}
+
+/* Botón de instalación */
+#installButton {
+    margin-top: 10px !important;
+    background: white !important;
+    color: #0066B3 !important;
+}
+
+/* Animaciones */
+@keyframes scan {
+    0% { top: 0; }
+    100% { top: 100%; }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .hospital-title {
+        font-size: 42px;
+        padding: 30px 15px 15px;
+    }
+    
+    .btn {
+        padding: 16px 20px;
+        font-size: 18px;
+    }
+    
+    .action-title {
+        font-size: 22px;
+    }
+    
+    .action-btn {
+        font-size: 22px !important;
+        padding: 18px !important;
+    }
+    
+    .result-header {
+        padding: 20px;
+    }
+    
+    .result-body {
+        padding: 20px;
+    }
+    
+    .result-footer {
+        padding: 20px;
+    }
+    
+    .field-value {
+        font-size: 20px;
+    }
+    
+    .result-time {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 360px) {
+    .hospital-title {
+        font-size: 36px;
+        padding: 25px 10px 10px;
+    }
+    
+    .btn {
+        padding: 14px 18px;
+        font-size: 16px;
+    }
+    
+    .action-title {
+        font-size: 20px;
+    }
+    
+    .action-btn {
+        font-size: 20px !important;
+        padding: 16px !important;
+    }
+    
+    .field-value {
+        font-size: 18px;
+    }
+    
+    .result-time {
+        font-size: 24px;
+    }
+}
+
+/* Soporte para iPhone notch */
+@supports (padding: max(0px)) {
+    .hospital-title {
+        padding-top: max(40px, env(safe-area-inset-top));
+    }
+    
+    body.scanning-active .scanning-instructions {
+        top: max(50px, env(safe-area-inset-top));
+        left: max(20px, env(safe-area-inset-left));
+        right: max(20px, env(safe-area-inset-right));
+    }
+    
+    body.scanning-active .video-controls {
+        bottom: max(40px, env(safe-area-inset-bottom));
+        left: max(20px, env(safe-area-inset-left));
+        right: max(20px, env(safe-area-inset-right));
+    }
+}
+
+/* Agregar al final del archivo style.css */
+
+/* Botón Registrar Empleado */
+.btn-register {
+    background: linear-gradient(135deg, #FF9800, #F57C00);
+    color: white !important;
+    border: none !important;
+    box-shadow: 0 8px 20px rgba(255, 152, 0, 0.3);
+}
+
+.btn-register:hover {
+    background: linear-gradient(135deg, #F57C00, #E65100);
+    transform: translateY(-3px);
+}
+
+/* Pantalla de registro */
+.register-screen {
+    width: 100%;
+    max-width: 350px;
+    background: transparent;
+    border-radius: 30px;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+    flex-direction: column;
+    align-items: center;
+    z-index: 20;
+}
+
+.success-card .result-header {
+    background: #4CAF50 !important;
+}
+
+/* Toast de error */
+.error-toast {
+    position: fixed;
+    bottom: 30px;
+    left: 20px;
+    right: 20px;
+    z-index: 10000;
+    transform: translateY(100px);
+    transition: transform 0.3s ease;
+}
+
+.error-toast.show {
+    transform: translateY(0);
+}
+
+.error-toast-content {
+    background: #f44336;
+    color: white;
+    padding: 16px 20px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    font-weight: 500;
+}
+
+.error-icon {
+    font-size: 24px;
+}
+
+.error-message {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: pre-line;
+}
+
+/* Ajustes responsivos */
+@media (max-width: 480px) {
+    .btn-register {
+        font-size: 16px;
+        padding: 14px 18px;
+    }
+    
+    .error-toast-content {
+        padding: 14px 16px;
+    }
+    
+    .error-message {
+        font-size: 13px;
+    }
+}

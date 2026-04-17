@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Ernesto Segundo Paolini</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="hospital-title">
+            HOSPITAL<br>
+            ERNESTO<br>
+            SEGUNDO<br>
+            PAOLINI
+        </div>
+        
+        <div class="buttons-container">
+            <button id="registerEmployeeBtn" class="btn btn-register">
+                📝 REGISTRAR EMPLEADO
+            </button>
+            
+            <button id="scanButton" class="btn btn-primary">
+                📷 ESCANEAR ASISTENCIA
+            </button>
+            
+            <button id="historyButton" class="btn btn-secondary">
+                📋 HISTORIAL
+            </button>
+        </div>
+        
+        <!-- Pantalla de selección de acción -->
+        <div id="action-selection-screen" class="action-selection-screen" style="display: none;">
+            <h2 class="action-title">SELECCIONE ACCIÓN</h2>
+            <div class="action-buttons">
+                <button id="entry-btn" class="btn action-btn entry-btn">
+                    🚪 ENTRADA
+                </button>
+                <button id="exit-btn" class="btn action-btn exit-btn">
+                    🚶 SALIDA
+                </button>
+            </div>
+            <button id="back-from-action-btn" class="btn btn-secondary back-btn">
+                ← VOLVER
+            </button>
+        </div>
+        
+        <!-- Pantalla de historial -->
+        <div id="history-screen" class="history-screen" style="display: none;">
+            <h2 class="history-title">ÚLTIMOS REGISTROS</h2>
+            <div id="history-list" class="history-list"></div>
+            <button id="back-from-history-btn" class="btn btn-secondary back-btn">
+                ← VOLVER
+            </button>
+        </div>
+        
+        <!-- Pantalla de registro exitoso -->
+        <div id="register-screen" class="register-screen" style="display: none;">
+            <div id="register-result" class="result-box"></div>
+            <button id="back-from-register-btn" class="btn btn-secondary back-btn" style="margin-top: 15px;">
+                ← VOLVER
+            </button>
+        </div>
+        
+        <!-- Video para escaneo -->
+        <div id="video-container" style="display: none;">
+            <video id="qr-video" playsinline></video>
+            <canvas id="qr-canvas" style="display: none;"></canvas>
+            <div class="video-controls">
+                <button id="cancel-scan-btn" class="btn btn-secondary">CANCELAR</button>
+            </div>
+        </div>
+        
+        <!-- Resultado del escaneo -->
+        <div id="result-container" style="display: none;">
+            <div id="scan-result" class="result-box"></div>
+        </div>
+        
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
