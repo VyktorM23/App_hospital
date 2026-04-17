@@ -1,4 +1,4 @@
-// app.js - Sistema de control de asistencia con validación de empleados
+// app.js - Sistema de control de asistencia con validación completa
 
 let deferredPrompt;
 let videoStream = null;
@@ -7,14 +7,17 @@ let scanTimeout = null;
 const SCAN_INTERVAL = 200;
 
 // Estado de la aplicación
-let currentAction = null; // 'entrada' o 'salida'
-let attendanceHistory = []; // Historial de asistencias
-let registeredEmployees = []; // Base de datos de empleados registrados
+let currentAction = null; // 'entrada', 'salida', 'registro'
+let attendanceHistory = [];
+let registeredEmployees = [];
+let isLoggedIn = false;
+let currentUser = null;
 
 // Elementos del DOM
 const scanButton = document.getElementById('scanButton');
 const registerEmployeeBtn = document.getElementById('registerEmployeeBtn');
 const historyButton = document.getElementById('historyButton');
+const loginButton = document.getElementById('loginButton');
 const videoContainer = document.getElementById('video-container');
 const video = document.getElementById('qr-video');
 const canvas = document.getElementById('qr-canvas');
@@ -32,12 +35,26 @@ const backFromHistoryBtn = document.getElementById('back-from-history-btn');
 const registerScreen = document.getElementById('register-screen');
 const registerResult = document.getElementById('register-result');
 const backFromRegisterBtn = document.getElementById('back-from-register-btn');
+const loginScreen = document.getElementById('login-screen');
+const loginForm = document.getElementById('login-form');
+const loginError = document.getElementById('login-error');
+const backFromLoginBtn = document.getElementById('back-from-login-btn');
+const employeesScreen = document.getElementById('employees-screen');
+const employeesList = document.getElementById('employees-list');
+const backFromEmployeesBtn = document.getElementById('back-from-employees-btn');
+const logoutBtn = document.getElementById('logout-btn');
 const body = document.body;
 const hospitalTitle = document.querySelector('.hospital-title');
 const container = document.querySelector('.container');
 const buttonsContainer = document.querySelector('.buttons-container');
 
 let cameraPermissionGranted = false;
+
+// Credenciales de acceso (puedes cambiarlas)
+const ADMIN_CREDENTIALS = {
+    username: 'admin',
+    password: 'admin123'
+};
 
 // Inicializar
 document.addEventListener('DOMContentLoaded', () => {
@@ -53,11 +70,148 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     precargarCamara();
+    verificarSesion();
 });
 
-// Cargar datos desde localStorage
+function verificarSesion() {
+    const sesionGuardada = localStorage.getItem('userSession');
+    if (sesionGuardada) {
+        try {
+            const session = JSON.parse(sesionGuardada);
+            if (session.expires > Date.now()) {
+                isLoggedIn = true;
+                currentUser = session.username;
+                mostrarPantallaPrincipal();
+            } else {
+                localStorage.removeItem('userSession');
+                mostrarPantallaLogin();
+            }
+        } catch (e) {
+            mostrarPantallaLogin();
+        }
+    } else {
+        mostrarPantallaLogin();
+    }
+}
+
+function mostrarPantallaLogin() {
+    hospitalTitle.style.display = 'block';
+    buttonsContainer.style.display = 'none';
+    actionSelectionScreen.style.display = 'none';
+    historyScreen.style.display = 'none';
+    resultContainer.style.display = 'none';
+    registerScreen.style.display = 'none';
+    loginScreen.style.display = 'flex';
+    employeesScreen.style.display = 'none';
+}
+
+function mostrarPantallaPrincipal() {
+    hospitalTitle.style.display = 'block';
+    buttonsContainer.style.display = 'flex';
+    actionSelectionScreen.style.display = 'none';
+    historyScreen.style.display = 'none';
+    resultContainer.style.display = 'none';
+    registerScreen.style.display = 'none';
+    loginScreen.style.display = 'none';
+    employeesScreen.style.display = 'none';
+}
+
+function mostrarPantallaEmpleados() {
+    hospitalTitle.style.display = 'none';
+    buttonsContainer.style.display = 'none';
+    actionSelectionScreen.style.display = 'none';
+    historyScreen.style.display = 'none';
+    resultContainer.style.display = 'none';
+    registerScreen.style.display = 'none';
+    loginScreen.style.display = 'none';
+    employeesScreen.style.display = 'flex';
+    actualizarListaEmpleados();
+}
+
+function actualizarListaEmpleados() {
+    employeesList.innerHTML = '';
+    
+    if (registeredEmployees.length === 0) {
+        employeesList.innerHTML = '<div class="no-data">No hay empleados registrados</div>';
+        return;
+    }
+    
+    registeredEmployees.forEach(empleado => {
+        const item = document.createElement('div');
+        item.className = 'employee-item';
+        item.innerHTML = `
+            <div class="employee-info">
+                <div class="employee-name">${empleado.nombre}</div>
+                <div class="employee-details">
+                    <span class="employee-id">📄 C.I: ${empleado.empleado_id}</span>
+                    <span class="employee-institution">🏥 ${empleado.institucion}</span>
+                </div>
+                <div class="employee-date">📅 Registrado: ${new Date(empleado.fecha_registro).toLocaleDateString()}</div>
+            </div>
+            <button class="btn-delete-employee" data-id="${empleado.empleado_id}">🗑️ Eliminar</button>
+        `;
+        employeesList.appendChild(item);
+    });
+    
+    // Agregar eventos de eliminar
+    document.querySelectorAll('.btn-delete-employee').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const empleadoId = btn.getAttribute('data-id');
+            eliminarEmpleado(empleadoId);
+        });
+    });
+}
+
+function eliminarEmpleado(empleadoId) {
+    if (confirm('¿Estás seguro de eliminar este empleado? Se perderá su historial de asistencia.')) {
+        // Eliminar empleado
+        registeredEmployees = registeredEmployees.filter(emp => emp.empleado_id !== empleadoId);
+        // Eliminar su historial de asistencia
+        attendanceHistory = attendanceHistory.filter(reg => reg.cedula !== empleadoId);
+        
+        guardarEmpleados();
+        guardarHistorial();
+        actualizarListaEmpleados();
+        mostrarToast('Empleado eliminado correctamente', 'success');
+    }
+}
+
+function iniciarSesion(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    
+    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+        isLoggedIn = true;
+        currentUser = username;
+        
+        // Guardar sesión por 8 horas
+        const session = {
+            username: username,
+            expires: Date.now() + (8 * 60 * 60 * 1000)
+        };
+        localStorage.setItem('userSession', JSON.stringify(session));
+        
+        mostrarPantallaPrincipal();
+        loginError.style.display = 'none';
+        document.getElementById('username').value = '';
+        document.getElementById('password').value = '';
+    } else {
+        loginError.style.display = 'block';
+        loginError.textContent = '❌ Usuario o contraseña incorrectos';
+    }
+}
+
+function cerrarSesion() {
+    isLoggedIn = false;
+    currentUser = null;
+    localStorage.removeItem('userSession');
+    mostrarPantallaLogin();
+    mostrarToast('Sesión cerrada correctamente', 'info');
+}
+
 function cargarDatos() {
-    // Cargar historial de asistencias
     const historialGuardado = localStorage.getItem('attendanceHistory');
     if (historialGuardado) {
         try {
@@ -67,7 +221,6 @@ function cargarDatos() {
         }
     }
     
-    // Cargar empleados registrados
     const empleadosGuardados = localStorage.getItem('registeredEmployees');
     if (empleadosGuardados) {
         try {
@@ -78,15 +231,34 @@ function cargarDatos() {
     }
     
     console.log(`📋 ${registeredEmployees.length} empleados registrados`);
+    console.log(`📊 ${attendanceHistory.length} registros de asistencia`);
 }
 
-// Guardar datos en localStorage
 function guardarEmpleados() {
     localStorage.setItem('registeredEmployees', JSON.stringify(registeredEmployees));
 }
 
 function guardarHistorial() {
     localStorage.setItem('attendanceHistory', JSON.stringify(attendanceHistory));
+}
+
+function mostrarToast(mensaje, tipo = 'error') {
+    const toast = document.createElement('div');
+    toast.className = `toast-notification ${tipo}`;
+    toast.innerHTML = `
+        <div class="toast-content">
+            <span class="toast-icon">${tipo === 'error' ? '❌' : (tipo === 'success' ? '✅' : 'ℹ️')}</span>
+            <span class="toast-message">${mensaje}</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.classList.add('show'), 10);
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }
 
 function precargarCamara() {
@@ -104,6 +276,10 @@ function precargarCamara() {
 }
 
 function configurarBotones() {
+    if (loginButton) {
+        loginButton.addEventListener('click', mostrarPantallaLogin);
+    }
+    
     if (scanButton) {
         scanButton.addEventListener('click', mostrarPantallaAccion);
     }
@@ -136,6 +312,25 @@ function configurarBotones() {
         backFromRegisterBtn.addEventListener('click', volverInicio);
     }
     
+    if (backFromLoginBtn) {
+        backFromLoginBtn.addEventListener('click', () => {
+            if (isLoggedIn) {
+                mostrarPantallaPrincipal();
+            } else {
+                // Si no hay sesión, solo cerrar login
+                mostrarPantallaLogin();
+            }
+        });
+    }
+    
+    if (backFromEmployeesBtn) {
+        backFromEmployeesBtn.addEventListener('click', mostrarPantallaPrincipal);
+    }
+    
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', cerrarSesion);
+    }
+    
     if (newScanBtn) {
         newScanBtn.addEventListener('click', resetearEscaneo);
     }
@@ -143,9 +338,12 @@ function configurarBotones() {
     if (cancelScanBtn) {
         cancelScanBtn.addEventListener('click', detenerEscaneo);
     }
+    
+    if (loginForm) {
+        loginForm.addEventListener('submit', iniciarSesion);
+    }
 }
 
-// INICIAR REGISTRO DE NUEVO EMPLEADO
 function iniciarRegistroEmpleado() {
     currentAction = 'registro';
     hospitalTitle.style.display = 'none';
@@ -154,10 +352,10 @@ function iniciarRegistroEmpleado() {
     historyScreen.style.display = 'none';
     resultContainer.style.display = 'none';
     registerScreen.style.display = 'none';
+    employeesScreen.style.display = 'none';
     iniciarEscaneo();
 }
 
-// MOSTRAR PANTALLAS
 function mostrarPantallaAccion() {
     hospitalTitle.style.display = 'none';
     buttonsContainer.style.display = 'none';
@@ -165,6 +363,7 @@ function mostrarPantallaAccion() {
     historyScreen.style.display = 'none';
     resultContainer.style.display = 'none';
     registerScreen.style.display = 'none';
+    employeesScreen.style.display = 'none';
     container.style.justifyContent = 'center';
 }
 
@@ -175,6 +374,7 @@ function mostrarHistorial() {
     historyScreen.style.display = 'flex';
     resultContainer.style.display = 'none';
     registerScreen.style.display = 'none';
+    employeesScreen.style.display = 'none';
     container.style.justifyContent = 'center';
     actualizarListaHistorial();
 }
@@ -185,6 +385,7 @@ function volverInicio() {
     historyScreen.style.display = 'none';
     resultContainer.style.display = 'none';
     registerScreen.style.display = 'none';
+    employeesScreen.style.display = 'none';
     videoContainer.style.display = 'none';
     buttonsContainer.style.display = 'flex';
     container.style.justifyContent = 'center';
@@ -234,6 +435,7 @@ function iniciarEscaneoConAccion(accion) {
     historyScreen.style.display = 'none';
     resultContainer.style.display = 'none';
     registerScreen.style.display = 'none';
+    employeesScreen.style.display = 'none';
     iniciarEscaneo();
 }
 
@@ -262,8 +464,8 @@ function crearOverlayEscaneo() {
     const instructions = document.createElement('div');
     instructions.className = 'scanning-instructions';
     instructions.textContent = currentAction === 'registro' 
-        ? 'Escanea el QR del empleado para registrarlo' 
-        : 'Coloca el código QR dentro del recuadro';
+        ? '📝 Escanea el QR del empleado para REGISTRARLO' 
+        : '📷 Coloca el código QR dentro del recuadro';
     
     body.appendChild(overlay);
     body.appendChild(instructions);
@@ -314,7 +516,7 @@ async function iniciarEscaneo() {
         
     } catch (error) {
         console.error('❌ Error:', error);
-        mostrarError('No se pudo acceder a la cámara');
+        mostrarToast('No se pudo acceder a la cámara', 'error');
         detenerEscaneo();
     }
 }
@@ -349,8 +551,8 @@ function realizarEscaneo() {
     }
 }
 
-// FUNCIÓN PRINCIPAL: Procesar el QR escaneado
 function procesarQR(data) {
+    // Detener escaneo inmediatamente
     scanningActive = false;
     
     if (scanTimeout) {
@@ -381,49 +583,47 @@ function procesarQR(data) {
     let qrData = null;
     
     try {
-        // Intentar parsear como JSON
         qrData = JSON.parse(data);
     } catch (e) {
-        // Si no es JSON válido, mostrar error
-        mostrarError('QR no válido: Formato incorrecto');
+        console.error('Error parsing QR:', e);
+        mostrarToast('❌ QR no válido: Formato incorrecto', 'error');
         volverInicio();
         return;
     }
     
-    // VALIDAR que el QR tenga el tipo correcto
-    if (qrData.tipo !== 'registro_asistencia') {
-        mostrarError('QR no válido: Este código no es para registro de asistencia');
+    // VALIDAR tipo
+    if (!qrData.tipo || qrData.tipo !== 'registro_asistencia') {
+        mostrarToast('❌ QR no válido: Este código no es para registro de asistencia', 'error');
         volverInicio();
         return;
     }
     
     // Validar campos requeridos
     if (!qrData.empleado_id || !qrData.nombre) {
-        mostrarError('QR no válido: Faltan datos del empleado');
+        mostrarToast('❌ QR no válido: Faltan datos del empleado (empleado_id o nombre)', 'error');
         volverInicio();
         return;
     }
     
-    // Si es modo REGISTRO de nuevo empleado
+    // Modo REGISTRO
     if (currentAction === 'registro') {
         registrarNuevoEmpleado(qrData);
         return;
     }
     
-    // Si es modo ENTRADA o SALIDA (asistencia)
+    // Modo ENTRADA o SALIDA
     if (currentAction === 'entrada' || currentAction === 'salida') {
         procesarAsistencia(qrData);
         return;
     }
 }
 
-// REGISTRAR NUEVO EMPLEADO
 function registrarNuevoEmpleado(qrData) {
-    // Verificar si el empleado ya existe
+    // Verificar si ya existe
     const empleadoExistente = registeredEmployees.find(emp => emp.empleado_id === qrData.empleado_id);
     
     if (empleadoExistente) {
-        mostrarError(`El empleado con C.I. ${qrData.empleado_id} ya está registrado`);
+        mostrarToast(`❌ El empleado con C.I. ${qrData.empleado_id} ya está registrado`, 'error');
         volverInicio();
         return;
     }
@@ -439,11 +639,9 @@ function registrarNuevoEmpleado(qrData) {
     registeredEmployees.push(nuevoEmpleado);
     guardarEmpleados();
     
-    // Mostrar éxito
-    mostrarPantallaRegistroExito(nuevoEmpleado);
-}
-
-function mostrarPantallaRegistroExito(empleado) {
+    mostrarToast(`✅ Empleado ${nuevoEmpleado.nombre} registrado correctamente`, 'success');
+    
+    // Mostrar pantalla de éxito
     hospitalTitle.style.display = 'none';
     buttonsContainer.style.display = 'none';
     actionSelectionScreen.style.display = 'none';
@@ -459,41 +657,39 @@ function mostrarPantallaRegistroExito(empleado) {
             </div>
             <div class="result-body">
                 <div class="result-field">
-                    <span class="field-label">EMPLEADO REGISTRADO:</span>
-                    <span class="field-value">${empleado.nombre}</span>
+                    <span class="field-label">EMPLEADO:</span>
+                    <span class="field-value">${nuevoEmpleado.nombre}</span>
                 </div>
                 <div class="result-field">
                     <span class="field-label">CÉDULA:</span>
-                    <span class="field-value">${empleado.empleado_id}</span>
+                    <span class="field-value">${nuevoEmpleado.empleado_id}</span>
                 </div>
                 <div class="result-field">
                     <span class="field-label">INSTITUCIÓN:</span>
-                    <span class="field-value">${empleado.institucion}</span>
+                    <span class="field-value">${nuevoEmpleado.institucion}</span>
                 </div>
             </div>
         </div>
     `;
 }
 
-// PROCESAR ASISTENCIA (Entrada/Salida)
 function procesarAsistencia(qrData) {
-    // Buscar empleado en la base de datos local
+    // Buscar empleado registrado
     const empleado = registeredEmployees.find(emp => emp.empleado_id === qrData.empleado_id);
     
     if (!empleado) {
-        mostrarError(`EMPLEADO NO REGISTRADO\nC.I.: ${qrData.empleado_id}\n\nPrimero debe registrar al empleado usando el botón "REGISTRAR EMPLEADO"`);
+        mostrarToast(`❌ EMPLEADO NO REGISTRADO\nC.I.: ${qrData.empleado_id}\n\nUse el botón "REGISTRAR EMPLEADO" primero`, 'error');
         volverInicio();
         return;
     }
     
-    // Verificar que el nombre coincida
+    // Verificar coincidencia de nombre
     if (empleado.nombre !== qrData.nombre) {
-        mostrarError(`Datos inconsistentes\nEl nombre no coincide con el registro`);
+        mostrarToast(`❌ DATOS INCONSISTENTES\nEl nombre del QR no coincide con el registro`, 'error');
         volverInicio();
         return;
     }
     
-    // Registrar asistencia
     const ahora = new Date();
     const fechaFormateada = ahora.toLocaleDateString('es-ES');
     const horaFormateada = ahora.toLocaleTimeString('es-ES');
@@ -511,12 +707,15 @@ function procesarAsistencia(qrData) {
     const accionTexto = currentAction === 'entrada' ? 'ENTRADA' : 'SALIDA';
     const colorAccion = currentAction === 'entrada' ? '#4CAF50' : '#f44336';
     
+    mostrarToast(`✅ ${accionTexto} registrada para ${empleado.nombre}`, 'success');
+    
     // Mostrar resultado
     hospitalTitle.style.display = 'none';
     buttonsContainer.style.display = 'none';
     actionSelectionScreen.style.display = 'none';
     historyScreen.style.display = 'none';
     registerScreen.style.display = 'none';
+    employeesScreen.style.display = 'none';
     container.style.justifyContent = 'center';
     
     resultContainer.style.display = 'block';
@@ -552,30 +751,10 @@ function procesarAsistencia(qrData) {
         </div>
     `;
     
-    document.getElementById('back-to-home-btn').addEventListener('click', volverInicio);
-}
-
-// Mostrar error
-function mostrarError(mensaje) {
-    // Crear toast de error
-    const toast = document.createElement('div');
-    toast.className = 'error-toast';
-    toast.innerHTML = `
-        <div class="error-toast-content">
-            <span class="error-icon">❌</span>
-            <span class="error-message">${mensaje}</span>
-        </div>
-    `;
-    document.body.appendChild(toast);
-    
-    // Animación de entrada
-    setTimeout(() => toast.classList.add('show'), 10);
-    
-    // Remover después de 3 segundos
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    const backBtn = document.getElementById('back-to-home-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', volverInicio);
+    }
 }
 
 function detenerEscaneo() {

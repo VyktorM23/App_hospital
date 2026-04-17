@@ -21,13 +21,46 @@
             PAOLINI
         </div>
         
+        <!-- Pantalla de Login -->
+        <div id="login-screen" class="login-screen" style="display: none;">
+            <div class="login-card">
+                <h2 class="login-title">🔐 INICIAR SESIÓN</h2>
+                <form id="login-form">
+                    <input type="text" id="username" placeholder="USUARIO" class="login-input" required>
+                    <input type="password" id="password" placeholder="CONTRASEÑA" class="login-input" required>
+                    <div id="login-error" class="login-error" style="display: none;"></div>
+                    <button type="submit" class="btn btn-primary login-submit">INGRESAR</button>
+                </form>
+                <button id="back-from-login-btn" class="btn btn-secondary back-btn">
+                    ← VOLVER
+                </button>
+            </div>
+        </div>
+        
+        <!-- Pantalla de empleados (después de login) -->
+        <div id="employees-screen" class="employees-screen" style="display: none;">
+            <div class="employees-header">
+                <h2 class="employees-title">📋 EMPLEADOS REGISTRADOS</h2>
+                <button id="logout-btn" class="btn-logout">🚪 CERRAR SESIÓN</button>
+            </div>
+            <div id="employees-list" class="employees-list"></div>
+            <button id="back-from-employees-btn" class="btn btn-secondary back-btn">
+                ← VOLVER AL INICIO
+            </button>
+        </div>
+        
+        <!-- Botones principales -->
         <div class="buttons-container">
+            <button id="loginButton" class="btn btn-primary">
+                👤 VER EMPLEADOS
+            </button>
+            
             <button id="registerEmployeeBtn" class="btn btn-register">
                 📝 REGISTRAR EMPLEADO
             </button>
             
             <button id="scanButton" class="btn btn-primary">
-                📷 ESCANEAR ASISTENCIA
+                📷 REGISTRAR ASISTENCIA
             </button>
             
             <button id="historyButton" class="btn btn-secondary">

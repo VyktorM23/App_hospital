@@ -675,3 +675,260 @@ body.scanning-active #video-container {
         font-size: 13px;
     }
 }
+
+/* Estilos para Login y Empleados */
+
+.login-screen {
+    width: 100%;
+    max-width: 350px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 20;
+}
+
+.login-card {
+    background: white;
+    border-radius: 30px;
+    padding: 35px 25px;
+    width: 100%;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.login-title {
+    color: #0066B3;
+    font-size: 24px;
+    text-align: center;
+    margin-bottom: 25px;
+    text-transform: uppercase;
+}
+
+.login-input {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 50px;
+    font-size: 16px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.login-input:focus {
+    outline: none;
+    border-color: #0066B3;
+}
+
+.login-error {
+    background: #ffebee;
+    color: #f44336;
+    padding: 10px;
+    border-radius: 10px;
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.login-submit {
+    margin-top: 10px;
+}
+
+/* Pantalla de empleados */
+.employees-screen {
+    width: 100%;
+    max-width: 400px;
+    background: white;
+    border-radius: 30px;
+    padding: 20px;
+    flex-direction: column;
+    gap: 15px;
+    z-index: 20;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.employees-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.employees-title {
+    color: #0066B3;
+    font-size: 20px;
+    text-transform: uppercase;
+    margin: 0;
+}
+
+.btn-logout {
+    background: #f44336;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-logout:hover {
+    background: #d32f2f;
+    transform: scale(1.05);
+}
+
+.employees-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.employee-item {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-left: 5px solid #4CAF50;
+    transition: all 0.3s ease;
+}
+
+.employee-item:hover {
+    transform: translateX(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.employee-info {
+    flex: 1;
+}
+
+.employee-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.employee-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 5px;
+    font-size: 12px;
+    color: #666;
+}
+
+.employee-id {
+    background: #e3f2fd;
+    padding: 2px 8px;
+    border-radius: 20px;
+}
+
+.employee-institution {
+    background: #fff3e0;
+    padding: 2px 8px;
+    border-radius: 20px;
+}
+
+.employee-date {
+    font-size: 11px;
+    color: #999;
+}
+
+.btn-delete-employee {
+    background: #ffebee;
+    color: #f44336;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+}
+
+.btn-delete-employee:hover {
+    background: #f44336;
+    color: white;
+    transform: scale(1.05);
+}
+
+.no-data {
+    text-align: center;
+    color: #999;
+    padding: 40px;
+    font-style: italic;
+}
+
+/* Toast mejorado */
+.toast-notification {
+    position: fixed;
+    bottom: 30px;
+    left: 20px;
+    right: 20px;
+    z-index: 10000;
+    transform: translateY(100px);
+    transition: transform 0.3s ease;
+}
+
+.toast-notification.show {
+    transform: translateY(0);
+}
+
+.toast-content {
+    background: #333;
+    color: white;
+    padding: 16px 20px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.toast-notification.error .toast-content {
+    background: #f44336;
+}
+
+.toast-notification.success .toast-content {
+    background: #4CAF50;
+}
+
+.toast-notification.info .toast-content {
+    background: #2196F3;
+}
+
+.toast-icon {
+    font-size: 24px;
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.4;
+    white-space: pre-line;
+}
+
+/* Ajustes responsivos */
+@media (max-width: 480px) {
+    .employees-title {
+        font-size: 16px;
+    }
+    
+    .btn-logout {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+    
+    .employee-name {
+        font-size: 14px;
+    }
+    
+    .employee-details {
+        font-size: 10px;
+    }
+}
