@@ -140,7 +140,6 @@ function mostrarPantallaEmpleados() {
     employeesScreen.style.display = 'flex';
     actualizarListaEmpleados();
 }
-
 function actualizarListaEmpleados() {
     employeesList.innerHTML = '';
     
@@ -599,7 +598,7 @@ function registrarNuevoEmpleado(qrData) {
     
     mostrarToast(`✅ Empleado ${nuevoEmpleado.nombre} registrado correctamente`, 'success');
     
-    // Mostrar pantalla completa de registro exitoso
+    // Ocultar todo
     hospitalTitle.style.display = 'none';
     buttonsContainer.style.display = 'none';
     actionSelectionScreen.style.display = 'none';
@@ -607,30 +606,35 @@ function registrarNuevoEmpleado(qrData) {
     resultContainer.style.display = 'none';
     employeesScreen.style.display = 'none';
     loginScreen.style.display = 'none';
+    videoContainer.style.display = 'none';
+    
+    // Mostrar pantalla de registro a pantalla completa
     registerScreen.style.display = 'flex';
+    registerScreen.style.flexDirection = 'column';
+    registerScreen.style.justifyContent = 'center';
     
     registerResult.innerHTML = `
-        <div class="result-card success-card">
-            <div class="result-header" style="background: #4CAF50;">
-                <span class="result-action-icon">✅</span>
-                <span class="result-action-text">REGISTRADO</span>
+        <div class="result-card success-card" style="background: white; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; border-radius: 0;">
+            <div class="result-header" style="background: #4CAF50; padding: 40px; text-align: center;">
+                <div class="result-action-icon" style="font-size: 64px; display: block;">✅</div>
+                <div class="result-action-text" style="font-size: 40px; font-weight: 800; color: white;">REGISTRADO</div>
             </div>
-            <div class="result-body">
-                <div class="result-field">
-                    <span class="field-label">EMPLEADO:</span>
-                    <span class="field-value">${nuevoEmpleado.nombre}</span>
+            <div class="result-body" style="padding: 40px; flex: 1;">
+                <div class="result-field" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0;">
+                    <div class="field-label" style="font-size: 16px; color: #0066B3; margin-bottom: 10px;">EMPLEADO</div>
+                    <div class="field-value" style="font-size: 28px; font-weight: 500;">${nuevoEmpleado.nombre}</div>
+                </div>
+                <div class="result-field" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0;">
+                    <div class="field-label" style="font-size: 16px; color: #0066B3; margin-bottom: 10px;">CÉDULA</div>
+                    <div class="field-value" style="font-size: 28px; font-weight: 500;">${nuevoEmpleado.empleado_id}</div>
                 </div>
                 <div class="result-field">
-                    <span class="field-label">CÉDULA:</span>
-                    <span class="field-value">${nuevoEmpleado.empleado_id}</span>
-                </div>
-                <div class="result-field">
-                    <span class="field-label">INSTITUCIÓN:</span>
-                    <span class="field-value">${nuevoEmpleado.institucion}</span>
+                    <div class="field-label" style="font-size: 16px; color: #0066B3; margin-bottom: 10px;">INSTITUCIÓN</div>
+                    <div class="field-value" style="font-size: 28px; font-weight: 500;">${nuevoEmpleado.institucion}</div>
                 </div>
             </div>
-            <div class="result-footer">
-                <button id="back-to-home-register-btn" class="btn btn-primary result-home-btn">
+            <div class="result-footer" style="padding: 30px; background: white; border-top: 2px solid #f0f0f0;">
+                <button id="back-to-home-register-btn" class="btn btn-primary result-home-btn" style="width: 100%; padding: 18px; font-size: 20px;">
                     ← VOLVER AL INICIO
                 </button>
             </div>
@@ -659,8 +663,8 @@ function procesarAsistencia(qrData) {
     }
     
     const ahora = new Date();
-    const fechaFormateada = ahora.toLocaleDateString('es-ES');
-    const horaFormateada = ahora.toLocaleTimeString('es-ES');
+    const fechaFormateada = ahora.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const horaFormateada = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     
     const registro = {
         nombre: empleado.nombre,
@@ -675,9 +679,7 @@ function procesarAsistencia(qrData) {
     const accionTexto = currentAction === 'entrada' ? 'ENTRADA' : 'SALIDA';
     const colorAccion = currentAction === 'entrada' ? '#4CAF50' : '#f44336';
     
-    mostrarToast(`✅ ${accionTexto} registrada para ${empleado.nombre}`, 'success');
-    
-    // Mostrar pantalla completa de resultado
+    // Ocultar todo y mostrar resultado a pantalla completa
     hospitalTitle.style.display = 'none';
     buttonsContainer.style.display = 'none';
     actionSelectionScreen.style.display = 'none';
@@ -685,35 +687,39 @@ function procesarAsistencia(qrData) {
     registerScreen.style.display = 'none';
     employeesScreen.style.display = 'none';
     loginScreen.style.display = 'none';
-    container.style.justifyContent = 'center';
+    videoContainer.style.display = 'none';
     
+    // Mostrar resultado a pantalla completa
     resultContainer.style.display = 'flex';
+    resultContainer.style.flexDirection = 'column';
+    resultContainer.style.justifyContent = 'center';
+    
     scanResult.innerHTML = `
-        <div class="result-card">
-            <div class="result-header" style="background: ${colorAccion};">
-                <span class="result-action-icon">${currentAction === 'entrada' ? '🚪' : '🚶'}</span>
-                <span class="result-action-text">${accionTexto}</span>
+        <div class="result-card" style="background: white; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; border-radius: 0;">
+            <div class="result-header" style="background: ${colorAccion}; padding: 40px; text-align: center;">
+                <div class="result-action-icon" style="font-size: 64px; display: block;">${currentAction === 'entrada' ? '🚪' : '🚶'}</div>
+                <div class="result-action-text" style="font-size: 40px; font-weight: 800; color: white;">${accionTexto}</div>
             </div>
-            <div class="result-body">
-                <div class="result-field">
-                    <span class="field-label">EMPLEADO:</span>
-                    <span class="field-value">${empleado.nombre}</span>
+            <div class="result-body" style="padding: 40px; flex: 1;">
+                <div class="result-field" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0;">
+                    <div class="field-label" style="font-size: 16px; color: #0066B3; margin-bottom: 10px;">EMPLEADO</div>
+                    <div class="field-value" style="font-size: 28px; font-weight: 500;">${empleado.nombre}</div>
+                </div>
+                <div class="result-field" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0;">
+                    <div class="field-label" style="font-size: 16px; color: #0066B3; margin-bottom: 10px;">CÉDULA</div>
+                    <div class="field-value" style="font-size: 28px; font-weight: 500;">${empleado.empleado_id}</div>
+                </div>
+                <div class="result-field" style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0;">
+                    <div class="field-label" style="font-size: 16px; color: #0066B3; margin-bottom: 10px;">FECHA</div>
+                    <div class="field-value" style="font-size: 28px; font-weight: 500;">${fechaFormateada}</div>
                 </div>
                 <div class="result-field">
-                    <span class="field-label">CÉDULA:</span>
-                    <span class="field-value">${empleado.empleado_id}</span>
-                </div>
-                <div class="result-field">
-                    <span class="field-label">FECHA:</span>
-                    <span class="field-value">${fechaFormateada}</span>
-                </div>
-                <div class="result-field">
-                    <span class="field-label">HORA:</span>
-                    <span class="field-value result-time">${horaFormateada}</span>
+                    <div class="field-label" style="font-size: 16px; color: #0066B3; margin-bottom: 10px;">HORA</div>
+                    <div class="field-value result-time" style="font-size: 52px; font-weight: 700; color: #0066B3;">${horaFormateada}</div>
                 </div>
             </div>
-            <div class="result-footer">
-                <button id="back-to-home-result-btn" class="btn btn-primary result-home-btn">
+            <div class="result-footer" style="padding: 30px; background: white; border-top: 2px solid #f0f0f0;">
+                <button id="back-to-home-result-btn" class="btn btn-primary result-home-btn" style="width: 100%; padding: 18px; font-size: 20px;">
                     ← VOLVER AL INICIO
                 </button>
             </div>
