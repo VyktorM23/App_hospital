@@ -60,7 +60,7 @@ body {
     overflow-y: auto;
 }
 
-/* Título del hospital - estilo más elegante */
+/* Título del hospital */
 .hospital-title {
     color: white;
     font-size: 44px;
@@ -109,8 +109,6 @@ body {
     border: none;
     border-radius: 60px;
     transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
 }
 
 .btn-login-main::before {
@@ -122,7 +120,6 @@ body {
 .btn-login-main:hover {
     transform: translateY(-3px);
     box-shadow: 0 15px 30px rgba(0, 0, 0, 0.25);
-    background: linear-gradient(135deg, #ffffff 0%, #e8e8e8 100%);
 }
 
 /* Botón ESCANEAR */
@@ -241,7 +238,6 @@ body {
 .btn-logout:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(229, 57, 53, 0.4);
-    background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
 }
 
 /* Pantallas a pantalla completa */
@@ -257,7 +253,6 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 30px 20px;
     z-index: 100;
     overflow-y: auto;
 }
@@ -299,7 +294,6 @@ body {
     padding: 45px 35px;
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.3);
     margin-top: 40px;
-    backdrop-filter: blur(10px);
 }
 
 .input-group {
@@ -353,7 +347,7 @@ body {
     border-radius: 50px;
 }
 
-/* Pantalla de administrador - BOTÓN CERRAR SESIÓN VISIBLE */
+/* Pantalla de administrador */
 .admin-menu-container {
     width: 100%;
     height: 100%;
@@ -507,21 +501,31 @@ body {
     padding: 14px 30px !important;
     width: auto !important;
     min-width: 200px;
-    margin-top: 20px;
+    margin: 20px auto !important;
     border-radius: 60px !important;
     font-weight: 600 !important;
 }
 
-/* Estilos de TABLAS */
+/* Estilos de TABLAS - ANCHO COMPLETO */
+#history-screen, #employees-list-screen {
+    padding: 20px 0 0 0;
+}
+
+#history-screen .panel-title-top,
+#employees-list-screen .panel-title-top {
+    margin-top: 10px;
+    margin-bottom: 15px;
+    padding: 0 20px;
+}
+
 .table-container {
     width: 100%;
-    max-width: 550px;
-    max-height: 55vh;
+    flex: 1;
     overflow-y: auto;
     background: white;
-    border-radius: 25px;
-    margin-bottom: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    border-radius: 20px 20px 0 0;
+    margin-bottom: 0;
+    box-shadow: none;
 }
 
 .employees-table, .history-table {
@@ -533,7 +537,7 @@ body {
 .employees-table th, .history-table th {
     background: linear-gradient(135deg, #005b9f 0%, #003d6b 100%);
     color: white;
-    padding: 14px;
+    padding: 15px 12px;
     text-align: left;
     font-weight: 700;
     position: sticky;
@@ -542,7 +546,7 @@ body {
 }
 
 .employees-table td, .history-table td {
-    padding: 12px;
+    padding: 14px 12px;
     border-bottom: 1px solid #e0e0e0;
     color: #333;
 }
@@ -554,12 +558,43 @@ body {
 .no-data {
     text-align: center;
     color: #999;
-    padding: 40px !important;
+    padding: 50px !important;
     font-style: italic;
 }
 
-.history-table td:nth-child(3) {
+/* Badge para la acción ENTRADA (verde) y SALIDA (rojo) */
+.action-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-size: 12px;
     font-weight: 700;
+    text-align: center;
+    min-width: 100px;
+}
+
+.action-badge.entrada {
+    background: linear-gradient(135deg, #43a047 0%, #2e7d32 100%);
+    color: white;
+}
+
+.action-badge.salida {
+    background: linear-gradient(135deg, #e53935 0%, #c62828 100%);
+    color: white;
+}
+
+/* Scroll para tablas */
+.table-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: #005b9f;
+    border-radius: 10px;
 }
 
 /* Estilos para el escáner */
@@ -870,6 +905,12 @@ body.scanning-active .main-screen {
         font-size: 11px;
     }
     
+    .action-badge {
+        padding: 4px 10px;
+        font-size: 10px;
+        min-width: 80px;
+    }
+    
     .admin-btn {
         font-size: 16px !important;
         padding: 16px !important;
@@ -924,5 +965,9 @@ body.scanning-active .main-screen {
     
     .video-controls {
         bottom: max(40px, env(safe-area-inset-bottom));
+    }
+    
+    #history-screen, #employees-list-screen {
+        padding-top: max(20px, env(safe-area-inset-top));
     }
 }
