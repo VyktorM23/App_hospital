@@ -14,7 +14,7 @@
 </head>
 <body>
     <div class="container">
-        <!-- Título del hospital (visible solo en pantalla de inicio) -->
+        <!-- Título del hospital (visible en pantalla principal) -->
         <div class="hospital-title" id="hospitalTitle">
             HOSPITAL<br>
             ERNESTO<br>
@@ -22,10 +22,25 @@
             PAOLINI
         </div>
         
-        <!-- Pantalla de LOGIN -->
-        <div id="login-screen" class="login-screen">
+        <!-- Botones principales (pantalla principal) -->
+        <div id="main-screen" class="main-screen">
+            <div class="buttons-container">
+                <button id="loginButton" class="btn btn-primary">
+                    INICIAR SESION
+                </button>
+                <button id="scanButton" class="btn btn-primary">
+                    ESCANEAR
+                </button>
+                <button id="historyButton" class="btn btn-secondary">
+                    HISTORIAL
+                </button>
+            </div>
+        </div>
+        
+        <!-- Pantalla de LOGIN (modal a pantalla completa) -->
+        <div id="login-screen" class="fullscreen-panel" style="display: none;">
             <div class="login-box">
-                <h2 class="login-title">INICIAR SESIÓN</h2>
+                <h2 class="panel-title">INICIAR SESIÓN</h2>
                 <div class="input-group">
                     <input type="text" id="username" class="login-input" placeholder="USUARIO" autocomplete="off">
                 </div>
@@ -33,32 +48,28 @@
                     <input type="password" id="password" class="login-input" placeholder="CONTRASEÑA">
                 </div>
                 <button id="doLoginBtn" class="btn btn-login">INGRESAR</button>
+                <button id="cancelLoginBtn" class="btn btn-secondary cancel-login-btn">CANCELAR</button>
                 <div id="login-error" class="login-error" style="display: none;">Usuario o contraseña incorrectos</div>
             </div>
         </div>
         
-        <!-- Pantalla principal (botones) -->
-        <div id="main-screen" style="display: none;">
-            <div class="hospital-title">
-                HOSPITAL<br>
-                ERNESTO<br>
-                SEGUNDO<br>
-                PAOLINI
-            </div>
-            <div class="buttons-container">
-                <button id="scanButton" class="btn btn-primary">
-                    ESCANEAR
+        <!-- Pantalla de menú ADMINISTRADOR (después de login) -->
+        <div id="admin-menu-screen" class="fullscreen-panel" style="display: none;">
+            <h2 class="panel-title">MENÚ ADMINISTRADOR</h2>
+            <div class="admin-buttons">
+                <button id="register-employee-btn" class="btn admin-btn register-btn">
+                    📝 REGISTRAR EMPLEADO
                 </button>
-                <button id="adminButton" class="btn btn-admin">
-                    ADMINISTRADOR
+                <button id="view-employees-btn" class="btn admin-btn view-btn">
+                    👥 VER EMPLEADOS
                 </button>
-                <button id="historyButton" class="btn btn-secondary">
-                    HISTORIAL
-                </button>
-                <button id="logoutButton" class="btn btn-logout">
+                <button id="logout-from-admin-btn" class="btn btn-logout admin-logout-btn">
                     CERRAR SESIÓN
                 </button>
             </div>
+            <button id="back-from-admin-btn" class="btn btn-secondary back-btn-full">
+                ← VOLVER
+            </button>
         </div>
         
         <!-- Pantalla de selección de acción (Entrada/Salida) -->
@@ -77,26 +88,22 @@
             </button>
         </div>
         
-        <!-- Pantalla de menú ADMINISTRADOR -->
-        <div id="admin-menu-screen" class="fullscreen-panel" style="display: none;">
-            <h2 class="panel-title">MENÚ ADMINISTRADOR</h2>
-            <div class="admin-buttons">
-                <button id="register-employee-btn" class="btn admin-btn register-btn">
-                    📝 REGISTRAR EMPLEADO
-                </button>
-                <button id="view-employees-btn" class="btn admin-btn view-btn">
-                    👥 VER EMPLEADOS
-                </button>
-            </div>
-            <button id="back-from-admin-btn" class="btn btn-secondary back-btn-full">
-                ← VOLVER
-            </button>
-        </div>
-        
-        <!-- Pantalla de lista de empleados -->
+        <!-- Pantalla de lista de empleados (estilo tabla) -->
         <div id="employees-list-screen" class="fullscreen-panel" style="display: none;">
-            <h2 class="panel-title">EMPLEADOS REGISTRADOS</h2>
-            <div id="employees-list-container" class="scrollable-list"></div>
+            <h2 class="panel-title panel-title-top">LISTA DE EMPLEADOS</h2>
+            <div class="table-container">
+                <table class="employees-table">
+                    <thead>
+                        <tr>
+                            <th>NOMBRE</th>
+                            <th>CÉDULA</th>
+                        </tr>
+                    </thead>
+                    <tbody id="employees-table-body">
+                        <tr><td colspan="2" class="no-data">No hay empleados registrados</td></tr>
+                    </tbody>
+                </table>
+            </div>
             <button id="back-from-employees-list-btn" class="btn btn-secondary back-btn-full">
                 ← VOLVER
             </button>
@@ -104,8 +111,22 @@
         
         <!-- Pantalla de historial -->
         <div id="history-screen" class="fullscreen-panel" style="display: none;">
-            <h2 class="panel-title">ÚLTIMOS REGISTROS</h2>
-            <div id="history-list" class="scrollable-list"></div>
+            <h2 class="panel-title panel-title-top">ÚLTIMOS REGISTROS</h2>
+            <div class="table-container">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>NOMBRE</th>
+                            <th>CÉDULA</th>
+                            <th>ACCIÓN</th>
+                            <th>FECHA Y HORA</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body">
+                        <tr><td colspan="4" class="no-data">No hay registros de asistencia</td></tr>
+                    </tbody>
+                </table>
+            </div>
             <button id="back-from-history-btn" class="btn btn-secondary back-btn-full">
                 ← VOLVER
             </button>
@@ -120,7 +141,7 @@
             </div>
         </div>
         
-        <!-- Resultado del escaneo -->
+        <!-- Resultado del escaneo (asistencia) -->
         <div id="result-container" class="fullscreen-panel" style="display: none;">
             <div id="scan-result" class="result-box"></div>
         </div>
