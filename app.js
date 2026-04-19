@@ -22,6 +22,7 @@ const adminMenuScreen = document.getElementById('admin-menu-screen');
 const actionSelectionScreen = document.getElementById('action-selection-screen');
 const employeesListScreen = document.getElementById('employees-list-screen');
 const historyScreen = document.getElementById('history-screen');
+const configScreen = document.getElementById('config-screen');
 const resultContainer = document.getElementById('result-container');
 const videoContainer = document.getElementById('video-container');
 const video = document.getElementById('qr-video');
@@ -32,6 +33,7 @@ const scanResult = document.getElementById('scan-result');
 const loginButton = document.getElementById('loginButton');
 const scanButton = document.getElementById('scanButton');
 const historyButton = document.getElementById('historyButton');
+const configButton = document.getElementById('configButton');
 
 // Botones login
 const doLoginBtn = document.getElementById('doLoginBtn');
@@ -45,6 +47,11 @@ const registerEmployeeBtn = document.getElementById('register-employee-btn');
 const viewEmployeesBtn = document.getElementById('view-employees-btn');
 const backFromAdminBtn = document.getElementById('back-from-admin-btn');
 const logoutFromAdminBtn = document.getElementById('logout-from-admin-btn');
+
+// Botones configuración
+const clearDataBtn = document.getElementById('clear-data-btn');
+const aboutBtn = document.getElementById('about-btn');
+const backFromConfigBtn = document.getElementById('back-from-config-btn');
 
 // Botones acción
 const entryBtn = document.getElementById('entry-btn');
@@ -75,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     precargarCamara();
-    mostrarPantallaPrincipal();
 });
 
 function cargarDatos() {
@@ -113,6 +119,7 @@ function mostrarPantallaPrincipal() {
     actionSelectionScreen.style.display = 'none';
     employeesListScreen.style.display = 'none';
     historyScreen.style.display = 'none';
+    configScreen.style.display = 'none';
     resultContainer.style.display = 'none';
     videoContainer.style.display = 'none';
     isLoggedIn = false;
@@ -125,6 +132,7 @@ function mostrarLogin() {
     actionSelectionScreen.style.display = 'none';
     employeesListScreen.style.display = 'none';
     historyScreen.style.display = 'none';
+    configScreen.style.display = 'none';
     resultContainer.style.display = 'none';
     usernameInput.value = '';
     passwordInput.value = '';
@@ -138,6 +146,18 @@ function mostrarAdminMenu() {
     actionSelectionScreen.style.display = 'none';
     employeesListScreen.style.display = 'none';
     historyScreen.style.display = 'none';
+    configScreen.style.display = 'none';
+    resultContainer.style.display = 'none';
+}
+
+function mostrarConfiguracion() {
+    configScreen.style.display = 'flex';
+    mainScreen.style.display = 'none';
+    loginScreen.style.display = 'none';
+    adminMenuScreen.style.display = 'none';
+    actionSelectionScreen.style.display = 'none';
+    employeesListScreen.style.display = 'none';
+    historyScreen.style.display = 'none';
     resultContainer.style.display = 'none';
 }
 
@@ -148,6 +168,7 @@ function ocultarTodasPantallas() {
     actionSelectionScreen.style.display = 'none';
     employeesListScreen.style.display = 'none';
     historyScreen.style.display = 'none';
+    configScreen.style.display = 'none';
     resultContainer.style.display = 'none';
     videoContainer.style.display = 'none';
 }
@@ -163,6 +184,7 @@ function configurarBotones() {
         ocultarTodasPantallas();
         mostrarHistorial();
     });
+    configButton.addEventListener('click', mostrarConfiguracion);
     
     // Login
     doLoginBtn.addEventListener('click', hacerLogin);
@@ -185,6 +207,11 @@ function configurarBotones() {
         isLoggedIn = false;
         mostrarPantallaPrincipal();
     });
+    
+    // Configuración
+    clearDataBtn.addEventListener('click', limpiarDatos);
+    aboutBtn.addEventListener('click', mostrarAcercaDe);
+    backFromConfigBtn.addEventListener('click', mostrarPantallaPrincipal);
     
     // Acción (Entrada/Salida)
     entryBtn.addEventListener('click', () => {
@@ -210,6 +237,21 @@ function configurarBotones() {
     
     // Escaneo
     cancelScanBtn.addEventListener('click', detenerEscaneo);
+}
+
+function limpiarDatos() {
+    if (confirm('¿Estás seguro de que deseas eliminar TODOS los empleados registrados y el historial de asistencias? Esta acción no se puede deshacer.')) {
+        registeredEmployees = [];
+        attendanceHistory = [];
+        guardarEmpleados();
+        guardarHistorial();
+        mostrarAlertaExito('✅ Datos eliminados correctamente');
+        mostrarPantallaPrincipal();
+    }
+}
+
+function mostrarAcercaDe() {
+    mostrarAlertaInfo('📱 HOSPITAL ERNESTO SEGUNDO PAOLINI\n\nSistema de Control de Asistencia\nVersión 1.0\n\nDesarrollado para RR.HH.\n\nUsuario: admin\nContraseña: 1234');
 }
 
 function hacerLogin() {
@@ -484,7 +526,6 @@ function procesarRegistroEmpleado(qrData, nombre, cedula, institucion, tipo) {
     guardarEmpleados();
     
     mostrarAlertaExito(`✅ EMPLEADO REGISTRADO\n\nNombre: ${nombre}\nCédula: ${cedula}\nInstitución: ${institucion}`);
-    // Volver al menú de administrador, no a la pantalla principal
     mostrarAdminMenu();
 }
 
@@ -594,6 +635,21 @@ function mostrarAlertaExito(mensaje) {
     setTimeout(() => { if (alerta.parentNode) alerta.remove(); }, 4000);
 }
 
+function mostrarAlertaInfo(mensaje) {
+    const alerta = document.createElement('div');
+    alerta.className = 'custom-alert';
+    alerta.innerHTML = `
+        <div class="alert-content">
+            <div class="alert-icon">ℹ️</div>
+            <div class="alert-message">${mensaje.replace(/\n/g, '<br>')}</div>
+            <button class="alert-btn">Aceptar</button>
+        </div>
+    `;
+    document.body.appendChild(alerta);
+    alerta.querySelector('.alert-btn').addEventListener('click', () => alerta.remove());
+    setTimeout(() => { if (alerta.parentNode) alerta.remove(); }, 5000);
+}
+
 function detenerEscaneo() {
     scanningActive = false;
     if (scanTimeout) clearTimeout(scanTimeout);
@@ -619,7 +675,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
     deferredPrompt = e;
     const btn = document.createElement('button');
     btn.id = 'installButton';
-    btn.className = 'btn btn-primary';
+    btn.className = 'btn btn-login-main';
     btn.textContent = '📲 INSTALAR APP';
     btn.onclick = () => {
         if (deferredPrompt) {
@@ -628,8 +684,8 @@ window.addEventListener('beforeinstallprompt', (e) => {
         }
     };
     setTimeout(() => {
-        if (document.querySelector('.buttons-container') && !document.getElementById('installButton')) {
-            document.querySelector('.buttons-container').appendChild(btn);
+        if (document.querySelector('.center-buttons') && !document.getElementById('installButton')) {
+            document.querySelector('.center-buttons').appendChild(btn);
         }
     }, 1000);
 });

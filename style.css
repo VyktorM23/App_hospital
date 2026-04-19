@@ -29,37 +29,40 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 0 20px;
-    margin: 0 auto;
+    padding: 0;
+    margin: 0;
     background: #0066B3;
     overflow: hidden;
     position: relative;
 }
 
-/* Título del hospital */
+/* Pantalla principal */
+.main-screen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    background: #0066B3;
+    padding: 50px 20px 40px;
+}
+
+/* Título arriba */
 .hospital-title {
     color: white;
     font-size: 48px;
     font-weight: 800;
     text-align: center;
     line-height: 1.2;
-    padding: 20px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-    letter-spacing: 2px;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+    letter-spacing: 3px;
     text-transform: uppercase;
     width: 100%;
-    margin-bottom: 40px;
 }
 
-/* Pantalla principal */
-.main-screen {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.buttons-container {
+/* Botones centrales (uno debajo del otro) */
+.center-buttons {
     width: 100%;
     max-width: 280px;
     display: flex;
@@ -67,39 +70,81 @@ body {
     gap: 20px;
 }
 
-/* Botones generales */
-.btn {
+/* Botones inferiores (uno al lado del otro) */
+.bottom-buttons {
     width: 100%;
-    padding: 18px 24px;
+    max-width: 280px;
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    justify-content: center;
+}
+
+/* Estilos de botones */
+.btn {
     border: none;
     border-radius: 50px;
-    font-size: 20px;
     font-weight: 600;
     letter-spacing: 1.5px;
     cursor: pointer;
     transition: all 0.3s ease;
     text-align: center;
-    background: white;
-    color: #0066B3;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-    border: 2px solid rgba(255, 255, 255, 0.8);
     text-transform: uppercase;
 }
 
 .btn:hover {
     transform: translateY(-3px);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .btn:active {
     transform: translateY(-1px);
 }
 
-.btn-primary {
+/* Botón INICIAR SESION */
+.btn-login-main {
     background: white;
+    color: #0066B3;
+    width: 100%;
+    padding: 16px 24px;
+    font-size: 18px;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Botón ESCANEAR */
+.btn-scan-main {
+    background: rgba(255, 255, 255, 0.95);
+    color: #0066B3;
+    border: 2px solid white;
+    width: 100%;
+    padding: 16px 24px;
+    font-size: 18px;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Botones inferiores */
+.btn-bottom {
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    flex: 1;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.history-bottom-btn {
+    background: rgba(255, 255, 255, 0.9);
     color: #0066B3;
 }
 
+.config-bottom-btn {
+    background: rgba(255, 255, 255, 0.9);
+    color: #0066B3;
+}
+
+/* Botón secundario general */
 .btn-secondary {
     background: rgba(255, 255, 255, 0.9);
     color: #0066B3;
@@ -110,7 +155,6 @@ body {
 .btn-logout {
     background: #f44336;
     color: white;
-    border-color: #f44336;
 }
 
 .btn-logout:hover {
@@ -130,7 +174,7 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px;
+    padding: 30px 20px;
     z-index: 100;
     overflow-y: auto;
 }
@@ -140,7 +184,7 @@ body {
     font-size: 28px;
     font-weight: 800;
     text-align: center;
-    margin-bottom: 40px;
+    margin: 20px 0 30px;
     text-transform: uppercase;
     letter-spacing: 2px;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
@@ -159,7 +203,7 @@ body {
     border-radius: 30px;
     padding: 40px 30px;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-    margin-top: 20px;
+    margin-top: 40px;
 }
 
 .input-group {
@@ -189,7 +233,7 @@ body {
     margin-top: 10px;
     width: 100%;
     padding: 16px;
-    font-size: 20px;
+    font-size: 18px;
 }
 
 .cancel-login-btn {
@@ -220,6 +264,7 @@ body {
     padding: 18px !important;
     color: white !important;
     font-weight: 700 !important;
+    width: 100%;
 }
 
 .register-btn {
@@ -232,6 +277,32 @@ body {
 
 .admin-logout-btn {
     margin-top: 10px;
+}
+
+/* Botones de configuración */
+.config-buttons {
+    width: 100%;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.config-btn {
+    font-size: 18px !important;
+    padding: 18px !important;
+    color: white !important;
+    font-weight: 700 !important;
+    width: 100%;
+}
+
+.clear-btn {
+    background: #f44336 !important;
+}
+
+.about-btn {
+    background: #9C27B0 !important;
 }
 
 /* Botones de acción */
@@ -275,7 +346,7 @@ body {
 .table-container {
     width: 100%;
     max-width: 500px;
-    max-height: 60vh;
+    max-height: 55vh;
     overflow-y: auto;
     background: white;
     border-radius: 20px;
@@ -309,28 +380,14 @@ body {
     background: #f5f5f5;
 }
 
-.employees-table td:first-child, .history-table td:first-child,
-.employees-table th:first-child, .history-table th:first-child {
-    padding-left: 15px;
-}
-
 .no-data {
     text-align: center;
     color: #999;
     padding: 30px !important;
 }
 
-/* Estilo especial para la columna de acción en historial */
 .history-table td:nth-child(3) {
     font-weight: 700;
-}
-
-.history-table tr .entrada-col {
-    color: #4CAF50;
-}
-
-.history-table tr .salida-col {
-    color: #f44336;
 }
 
 /* Scroll para tablas */
@@ -354,8 +411,7 @@ body.scanning-active .container {
 }
 
 body.scanning-active .fullscreen-panel,
-body.scanning-active .main-screen,
-body.scanning-active .hospital-title {
+body.scanning-active .main-screen {
     display: none !important;
 }
 
@@ -604,43 +660,35 @@ body.scanning-active .hospital-title {
 /* Responsive */
 @media (max-width: 480px) {
     .hospital-title {
-        font-size: 42px;
+        font-size: 40px;
     }
     
-    .btn {
-        padding: 16px 20px;
-        font-size: 18px;
+    .btn-login-main, .btn-scan-main {
+        padding: 14px 20px;
+        font-size: 16px;
+    }
+    
+    .btn-bottom {
+        padding: 10px 16px;
+        font-size: 12px;
     }
     
     .panel-title {
         font-size: 24px;
     }
     
-    .action-btn {
-        font-size: 22px !important;
-        padding: 18px !important;
-    }
-    
     .employees-table th, .employees-table td,
     .history-table th, .history-table td {
         padding: 8px;
-        font-size: 12px;
-    }
-    
-    .field-value {
-        font-size: 18px;
-    }
-    
-    .result-time {
-        font-size: 24px;
+        font-size: 11px;
     }
 }
 
 /* Soporte para iPhone notch */
 @supports (padding: max(0px)) {
-    .fullscreen-panel {
-        padding-top: max(20px, env(safe-area-inset-top));
-        padding-bottom: max(20px, env(safe-area-inset-bottom));
+    .main-screen {
+        padding-top: max(50px, env(safe-area-inset-top));
+        padding-bottom: max(40px, env(safe-area-inset-bottom));
     }
     
     .scanning-instructions {

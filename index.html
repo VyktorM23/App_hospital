@@ -14,30 +14,38 @@
 </head>
 <body>
     <div class="container">
-        <!-- Título del hospital (visible en pantalla principal) -->
-        <div class="hospital-title" id="hospitalTitle">
-            HOSPITAL<br>
-            ERNESTO<br>
-            SEGUNDO<br>
-            PAOLINI
-        </div>
-        
-        <!-- Botones principales (pantalla principal) -->
+        <!-- Pantalla principal (NUEVO DISEÑO como la imagen) -->
         <div id="main-screen" class="main-screen">
-            <div class="buttons-container">
-                <button id="loginButton" class="btn btn-primary">
+            <!-- Título arriba -->
+            <div class="hospital-title">
+                HOSPITAL<br>
+                ERNESTO<br>
+                SEGUNDO<br>
+                PAOLINI
+            </div>
+            
+            <!-- Botones centrales -->
+            <div class="center-buttons">
+                <button id="loginButton" class="btn btn-login-main">
                     INICIAR SESION
                 </button>
-                <button id="scanButton" class="btn btn-primary">
+                <button id="scanButton" class="btn btn-scan-main">
                     ESCANEAR
                 </button>
-                <button id="historyButton" class="btn btn-secondary">
+            </div>
+            
+            <!-- Botones inferiores (uno al lado del otro) -->
+            <div class="bottom-buttons">
+                <button id="historyButton" class="btn btn-bottom history-bottom-btn">
                     HISTORIAL
+                </button>
+                <button id="configButton" class="btn btn-bottom config-bottom-btn">
+                    CONFIGURACIÓN
                 </button>
             </div>
         </div>
         
-        <!-- Pantalla de LOGIN (modal a pantalla completa) -->
+        <!-- Pantalla de LOGIN -->
         <div id="login-screen" class="fullscreen-panel" style="display: none;">
             <div class="login-box">
                 <h2 class="panel-title">INICIAR SESIÓN</h2>
@@ -68,6 +76,22 @@
                 </button>
             </div>
             <button id="back-from-admin-btn" class="btn btn-secondary back-btn-full">
+                ← VOLVER
+            </button>
+        </div>
+        
+        <!-- Pantalla de CONFIGURACIÓN -->
+        <div id="config-screen" class="fullscreen-panel" style="display: none;">
+            <h2 class="panel-title">CONFIGURACIÓN</h2>
+            <div class="config-buttons">
+                <button id="clear-data-btn" class="btn config-btn clear-btn">
+                    🗑️ LIMPIAR DATOS
+                </button>
+                <button id="about-btn" class="btn config-btn about-btn">
+                    ℹ️ ACERCA DE
+                </button>
+            </div>
+            <button id="back-from-config-btn" class="btn btn-secondary back-btn-full">
                 ← VOLVER
             </button>
         </div>
