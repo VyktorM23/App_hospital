@@ -45,7 +45,6 @@ const loginError = document.getElementById('login-error');
 // Botones admin
 const registerEmployeeBtn = document.getElementById('register-employee-btn');
 const viewEmployeesBtn = document.getElementById('view-employees-btn');
-const backFromAdminBtn = document.getElementById('back-from-admin-btn');
 const logoutFromAdminBtn = document.getElementById('logout-from-admin-btn');
 
 // Botones configuración
@@ -202,7 +201,6 @@ function configurarBotones() {
         ocultarTodasPantallas();
         mostrarListaEmpleados();
     });
-    backFromAdminBtn.addEventListener('click', mostrarPantallaPrincipal);
     logoutFromAdminBtn.addEventListener('click', () => {
         isLoggedIn = false;
         mostrarPantallaPrincipal();
@@ -235,8 +233,12 @@ function configurarBotones() {
     // Historial
     backFromHistoryBtn.addEventListener('click', mostrarPantallaPrincipal);
     
-    // Escaneo
-    cancelScanBtn.addEventListener('click', detenerEscaneo);
+    // Escaneo - CANCELAR ARREGLADO
+    if (cancelScanBtn) {
+        cancelScanBtn.addEventListener('click', () => {
+            detenerEscaneo();
+        });
+    }
 }
 
 function limpiarDatos() {
@@ -450,7 +452,10 @@ function realizarEscaneo() {
 function procesarResultado(data) {
     scanningActive = false;
     if (scanTimeout) clearTimeout(scanTimeout);
-    if (videoStream) videoStream.getTracks().forEach(track => track.stop());
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
     if (video) video.srcObject = null;
     
     const overlay = document.querySelector('.scanning-overlay');
@@ -651,17 +656,32 @@ function mostrarAlertaInfo(mensaje) {
 }
 
 function detenerEscaneo() {
+    console.log('🛑 Deteniendo escaneo...');
     scanningActive = false;
-    if (scanTimeout) clearTimeout(scanTimeout);
-    if (videoStream) videoStream.getTracks().forEach(track => track.stop());
-    if (video) video.srcObject = null;
+    
+    if (scanTimeout) {
+        clearTimeout(scanTimeout);
+        scanTimeout = null;
+    }
+    
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
+    
+    if (video) {
+        video.srcObject = null;
+    }
     
     const overlay = document.querySelector('.scanning-overlay');
     const instructions = document.querySelector('.scanning-instructions');
     if (overlay) overlay.remove();
     if (instructions) instructions.remove();
-    body.classList.remove('scanning-active');
     
+    body.classList.remove('scanning-active');
+    videoContainer.style.display = 'none';
+    
+    // Volver a la pantalla correcta según la acción
     if (currentAction === 'registro') {
         mostrarAdminMenu();
     } else {

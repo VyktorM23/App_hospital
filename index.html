@@ -14,9 +14,8 @@
 </head>
 <body>
     <div class="container">
-        <!-- Pantalla principal (NUEVO DISEÑO como la imagen) -->
+        <!-- Pantalla principal -->
         <div id="main-screen" class="main-screen">
-            <!-- Título arriba -->
             <div class="hospital-title">
                 HOSPITAL<br>
                 ERNESTO<br>
@@ -24,7 +23,6 @@
                 PAOLINI
             </div>
             
-            <!-- Botones centrales -->
             <div class="center-buttons">
                 <button id="loginButton" class="btn btn-login-main">
                     INICIAR SESION
@@ -34,7 +32,6 @@
                 </button>
             </div>
             
-            <!-- Botones inferiores (uno al lado del otro) -->
             <div class="bottom-buttons">
                 <button id="historyButton" class="btn btn-bottom history-bottom-btn">
                     HISTORIAL
@@ -61,23 +58,22 @@
             </div>
         </div>
         
-        <!-- Pantalla de menú ADMINISTRADOR (después de login) -->
+        <!-- Pantalla de menú ADMINISTRADOR (sin botón volver) -->
         <div id="admin-menu-screen" class="fullscreen-panel" style="display: none;">
-            <h2 class="panel-title">MENÚ ADMINISTRADOR</h2>
-            <div class="admin-buttons">
-                <button id="register-employee-btn" class="btn admin-btn register-btn">
-                    📝 REGISTRAR EMPLEADO
-                </button>
-                <button id="view-employees-btn" class="btn admin-btn view-btn">
-                    👥 VER EMPLEADOS
-                </button>
+            <div class="admin-menu-container">
+                <h2 class="panel-title">MENÚ ADMINISTRADOR</h2>
+                <div class="admin-buttons">
+                    <button id="register-employee-btn" class="btn admin-btn register-btn">
+                        📝 REGISTRAR EMPLEADO
+                    </button>
+                    <button id="view-employees-btn" class="btn admin-btn view-btn">
+                        👥 VER EMPLEADOS
+                    </button>
+                </div>
                 <button id="logout-from-admin-btn" class="btn btn-logout admin-logout-btn">
                     CERRAR SESIÓN
                 </button>
             </div>
-            <button id="back-from-admin-btn" class="btn btn-secondary back-btn-full">
-                ← VOLVER
-            </button>
         </div>
         
         <!-- Pantalla de CONFIGURACIÓN -->
@@ -112,7 +108,7 @@
             </button>
         </div>
         
-        <!-- Pantalla de lista de empleados (estilo tabla) -->
+        <!-- Pantalla de lista de empleados -->
         <div id="employees-list-screen" class="fullscreen-panel" style="display: none;">
             <h2 class="panel-title panel-title-top">LISTA DE EMPLEADOS</h2>
             <div class="table-container">
@@ -165,7 +161,7 @@
             </div>
         </div>
         
-        <!-- Resultado del escaneo (asistencia) -->
+        <!-- Resultado del escaneo -->
         <div id="result-container" class="fullscreen-panel" style="display: none;">
             <div id="scan-result" class="result-box"></div>
         </div>
