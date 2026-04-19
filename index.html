@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hospital Ernesto Segundo Paolini</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Hospital Ernesto Segundo Paolini - Control de Asistencia</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
     <meta name="mobile-web-app-capable" content="yes">
@@ -14,6 +14,7 @@
 </head>
 <body>
     <div class="container">
+        <!-- Título del hospital -->
         <div class="hospital-title">
             HOSPITAL<br>
             ERNESTO<br>
@@ -21,65 +22,58 @@
             PAOLINI
         </div>
         
-        <!-- Pantalla de Login -->
-        <div id="login-screen" class="login-screen" style="display: none;">
-            <div class="login-card">
-                <h2 class="login-title">🔐 INICIAR SESIÓN</h2>
-                <form id="login-form">
-                    <input type="text" id="username" placeholder="USUARIO" class="login-input" required>
-                    <input type="password" id="password" placeholder="CONTRASEÑA" class="login-input" required>
-                    <div id="login-error" class="login-error" style="display: none;"></div>
-                    <button type="submit" class="btn btn-primary login-submit">INGRESAR</button>
-                </form>
-                <button id="back-from-login-btn" class="btn btn-secondary back-btn">
-                    ← VOLVER
-                </button>
-            </div>
-        </div>
-        
-        <!-- Pantalla de empleados -->
-        <div id="employees-screen" class="employees-screen" style="display: none;">
-            <div class="employees-header">
-                <h2 class="employees-title">📋 EMPLEADOS REGISTRADOS</h2>
-                <button id="logout-btn" class="btn-logout">🚪 CERRAR SESIÓN</button>
-            </div>
-            <div id="employees-list" class="employees-list"></div>
-            <button id="back-from-employees-btn" class="btn btn-secondary back-btn">
-                ← VOLVER AL INICIO
-            </button>
-        </div>
-        
         <!-- Botones principales -->
         <div class="buttons-container">
             <button id="loginButton" class="btn btn-primary">
-                👤 VER EMPLEADOS
-            </button>
-            
-            <button id="registerEmployeeBtn" class="btn btn-register">
-                📝 REGISTRAR EMPLEADO
+                INICIAR SESION
             </button>
             
             <button id="scanButton" class="btn btn-primary">
-                📷 REGISTRAR ASISTENCIA
+                ESCANEAR
             </button>
             
             <button id="historyButton" class="btn btn-secondary">
-                📋 HISTORIAL
+                HISTORIAL
             </button>
         </div>
         
-        <!-- Pantalla de selección de acción -->
+        <!-- Pantalla de selección de acción (Entrada/Salida) -->
         <div id="action-selection-screen" class="action-selection-screen" style="display: none;">
             <h2 class="action-title">SELECCIONE ACCIÓN</h2>
             <div class="action-buttons">
                 <button id="entry-btn" class="btn action-btn entry-btn">
-                    🚪 ENTRADA
+                    ENTRADA
                 </button>
                 <button id="exit-btn" class="btn action-btn exit-btn">
-                    🚶 SALIDA
+                    SALIDA
                 </button>
             </div>
             <button id="back-from-action-btn" class="btn btn-secondary back-btn">
+                ← VOLVER
+            </button>
+        </div>
+        
+        <!-- Pantalla de menú de inicio de sesión -->
+        <div id="login-menu-screen" class="login-menu-screen" style="display: none;">
+            <h2 class="login-title">MENÚ ADMINISTRADOR</h2>
+            <div class="login-buttons">
+                <button id="register-employee-btn" class="btn login-menu-btn register-btn">
+                    📝 REGISTRAR EMPLEADO
+                </button>
+                <button id="view-employees-btn" class="btn login-menu-btn view-btn">
+                    👥 VER EMPLEADOS
+                </button>
+            </div>
+            <button id="back-from-login-menu-btn" class="btn btn-secondary back-btn">
+                ← VOLVER
+            </button>
+        </div>
+        
+        <!-- Pantalla de lista de empleados -->
+        <div id="employees-list-screen" class="employees-list-screen" style="display: none;">
+            <h2 class="employees-title">EMPLEADOS REGISTRADOS</h2>
+            <div id="employees-list-container" class="employees-list-container"></div>
+            <button id="back-from-employees-list-btn" class="btn btn-secondary back-btn">
                 ← VOLVER
             </button>
         </div>
@@ -93,20 +87,12 @@
             </button>
         </div>
         
-        <!-- Pantalla de registro exitoso -->
-        <div id="register-screen" class="register-screen" style="display: none;">
-            <div id="register-result" class="result-box"></div>
-            <button id="back-from-register-btn" class="btn btn-secondary back-btn" style="margin-top: 15px;">
-                ← VOLVER
-            </button>
-        </div>
-        
         <!-- Video para escaneo -->
         <div id="video-container" style="display: none;">
             <video id="qr-video" playsinline></video>
             <canvas id="qr-canvas" style="display: none;"></canvas>
             <div class="video-controls">
-                <button id="cancel-scan-btn" class="btn btn-secondary">CANCELAR</button>
+                <button id="cancel-scan-btn" class="btn btn-secondary">Cancelar</button>
             </div>
         </div>
         
