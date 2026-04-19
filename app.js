@@ -317,14 +317,16 @@ function actualizarTablaHistorial() {
         const fecha = new Date(registro.timestamp);
         const fechaFormateada = fecha.toLocaleDateString('es-ES');
         const horaFormateada = fecha.toLocaleTimeString('es-ES');
+        
+        // Clase de color según entrada o salida
+        const accionClass = registro.accion === 'entrada' ? 'accion-entrada' : 'accion-salida';
         const accionTexto = registro.accion === 'entrada' ? '🚪 ENTRADA' : '🚶 SALIDA';
-        const accionClass = registro.accion === 'entrada' ? 'entrada-col' : 'salida-col';
         
         row.innerHTML = `
-            <td>${registro.nombre}</td>
+            <td style="font-weight: 500;">${registro.nombre}</td>
             <td>${registro.cedula}</td>
             <td class="${accionClass}">${accionTexto}</td>
-            <td>${fechaFormateada} ${horaFormateada}</td>
+            <td style="font-size: 12px; color: #666;">${fechaFormateada}<br>${horaFormateada}</td>
         `;
         tableBody.appendChild(row);
     });
