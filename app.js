@@ -1,4 +1,4 @@
-// app.js - Funcionalidad completa de escaneo con registro de asistencia
+// app.js - Control de asistencia con login y pantallas completas
 let deferredPrompt;
 let videoStream = null;
 let scanningActive = false;
@@ -7,44 +7,55 @@ const SCAN_INTERVAL = 200;
 
 // Estado de la aplicación
 let currentAction = null; // 'entrada', 'salida', o 'registro'
-let attendanceHistory = []; // Historial de asistencias
-let registeredEmployees = []; // Lista de empleados registrados
+let attendanceHistory = [];
+let registeredEmployees = [];
+let isLoggedIn = false;
+
+// Credenciales (en producción esto iría en un backend)
+const VALID_USERNAME = "admin";
+const VALID_PASSWORD = "hospital2024";
 
 // Elementos del DOM
+const loginScreen = document.getElementById('login-screen');
+const mainScreen = document.getElementById('main-screen');
+const hospitalTitle = document.getElementById('hospitalTitle');
 const scanButton = document.getElementById('scanButton');
-const loginButton = document.getElementById('loginButton');
+const adminButton = document.getElementById('adminButton');
 const historyButton = document.getElementById('historyButton');
+const logoutButton = document.getElementById('logoutButton');
+const doLoginBtn = document.getElementById('doLoginBtn');
+const usernameInput = document.getElementById('username');
+const passwordInput = document.getElementById('password');
+const loginError = document.getElementById('login-error');
+
 const videoContainer = document.getElementById('video-container');
 const video = document.getElementById('qr-video');
 const canvas = document.getElementById('qr-canvas');
 const resultContainer = document.getElementById('result-container');
 const scanResult = document.getElementById('scan-result');
-const newScanBtn = document.getElementById('new-scan-btn');
 const cancelScanBtn = document.getElementById('cancel-scan-btn');
+
 const actionSelectionScreen = document.getElementById('action-selection-screen');
 const entryBtn = document.getElementById('entry-btn');
 const exitBtn = document.getElementById('exit-btn');
 const backFromActionBtn = document.getElementById('back-from-action-btn');
-const historyScreen = document.getElementById('history-screen');
-const historyList = document.getElementById('history-list');
-const backFromHistoryBtn = document.getElementById('back-from-history-btn');
-const body = document.body;
-const hospitalTitle = document.querySelector('.hospital-title');
-const container = document.querySelector('.container');
-const buttonsContainer = document.querySelector('.buttons-container');
 
-// Nuevos elementos para el menú de inicio de sesión
-const loginMenuScreen = document.getElementById('login-menu-screen');
+const adminMenuScreen = document.getElementById('admin-menu-screen');
 const registerEmployeeBtn = document.getElementById('register-employee-btn');
 const viewEmployeesBtn = document.getElementById('view-employees-btn');
-const backFromLoginMenuBtn = document.getElementById('back-from-login-menu-btn');
+const backFromAdminBtn = document.getElementById('back-from-admin-btn');
 
-// Pantalla de lista de empleados
 const employeesListScreen = document.getElementById('employees-list-screen');
 const employeesListContainer = document.getElementById('employees-list-container');
 const backFromEmployeesListBtn = document.getElementById('back-from-employees-list-btn');
 
-// Variable para controlar si ya se solicitó permiso de cámara
+const historyScreen = document.getElementById('history-screen');
+const historyList = document.getElementById('history-list');
+const backFromHistoryBtn = document.getElementById('back-from-history-btn');
+
+const body = document.body;
+const container = document.querySelector('.container');
+
 let cameraPermissionGranted = false;
 
 // Inicializar
@@ -56,17 +67,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     if (typeof jsQR !== 'undefined') {
         console.log('✅ jsQR listo');
-        if (scanButton) {
-            scanButton.disabled = false;
-        }
     }
     
-    // Precargar la cámara en segundo plano
     precargarCamara();
+    mostrarLogin();
 });
 
 function cargarDatos() {
-    // Cargar historial de asistencias
     const historialGuardado = localStorage.getItem('attendanceHistory');
     if (historialGuardado) {
         try {
@@ -76,7 +83,6 @@ function cargarDatos() {
         }
     }
     
-    // Cargar empleados registrados
     const empleadosGuardados = localStorage.getItem('registeredEmployees');
     if (empleadosGuardados) {
         try {
@@ -95,95 +101,113 @@ function guardarHistorial() {
     localStorage.setItem('attendanceHistory', JSON.stringify(attendanceHistory));
 }
 
-function precargarCamara() {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia && !cameraPermissionGranted) {
-        navigator.mediaDevices.getUserMedia({ 
-            video: { 
-                facingMode: 'environment',
-                width: { ideal: 1280 },
-                height: { ideal: 720 }
-            } 
-        })
-        .then(stream => {
-            cameraPermissionGranted = true;
-            stream.getTracks().forEach(track => track.stop());
-            console.log('✅ Permiso de cámara pre-obtenido');
-        })
-        .catch(err => {
-            console.log('No se pudo pre-obtener permiso de cámara:', err);
-        });
-    }
+function mostrarLogin() {
+    loginScreen.style.display = 'flex';
+    mainScreen.style.display = 'none';
+    actionSelectionScreen.style.display = 'none';
+    adminMenuScreen.style.display = 'none';
+    employeesListScreen.style.display = 'none';
+    historyScreen.style.display = 'none';
+    resultContainer.style.display = 'none';
+    videoContainer.style.display = 'none';
+    usernameInput.value = '';
+    passwordInput.value = '';
+    loginError.style.display = 'none';
+    isLoggedIn = false;
+}
+
+function mostrarMainScreen() {
+    loginScreen.style.display = 'none';
+    mainScreen.style.display = 'flex';
+    actionSelectionScreen.style.display = 'none';
+    adminMenuScreen.style.display = 'none';
+    employeesListScreen.style.display = 'none';
+    historyScreen.style.display = 'none';
+    resultContainer.style.display = 'none';
+    videoContainer.style.display = 'none';
+    container.style.justifyContent = 'center';
+}
+
+function ocultarTodasPantallas() {
+    actionSelectionScreen.style.display = 'none';
+    adminMenuScreen.style.display = 'none';
+    employeesListScreen.style.display = 'none';
+    historyScreen.style.display = 'none';
+    resultContainer.style.display = 'none';
+    videoContainer.style.display = 'none';
 }
 
 function configurarBotones() {
-    if (scanButton) {
-        scanButton.addEventListener('click', mostrarPantallaAccion);
-    }
+    doLoginBtn.addEventListener('click', hacerLogin);
+    usernameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') hacerLogin(); });
+    passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') hacerLogin(); });
     
-    if (loginButton) {
-        loginButton.addEventListener('click', mostrarLoginMenu);
-    }
+    scanButton.addEventListener('click', () => {
+        ocultarTodasPantallas();
+        mostrarPantallaAccion();
+    });
     
-    if (historyButton) {
-        historyButton.addEventListener('click', mostrarHistorial);
-    }
+    adminButton.addEventListener('click', () => {
+        ocultarTodasPantallas();
+        mostrarAdminMenu();
+    });
     
-    if (entryBtn) {
-        entryBtn.addEventListener('click', () => iniciarEscaneoConAccion('entrada'));
-    }
+    historyButton.addEventListener('click', () => {
+        ocultarTodasPantallas();
+        mostrarHistorial();
+    });
     
-    if (exitBtn) {
-        exitBtn.addEventListener('click', () => iniciarEscaneoConAccion('salida'));
-    }
+    logoutButton.addEventListener('click', () => {
+        mostrarLogin();
+    });
     
-    if (backFromActionBtn) {
-        backFromActionBtn.addEventListener('click', volverInicio);
-    }
+    entryBtn.addEventListener('click', () => iniciarEscaneoConAccion('entrada'));
+    exitBtn.addEventListener('click', () => iniciarEscaneoConAccion('salida'));
+    backFromActionBtn.addEventListener('click', mostrarMainScreen);
     
-    if (backFromHistoryBtn) {
-        backFromHistoryBtn.addEventListener('click', volverInicio);
-    }
+    registerEmployeeBtn.addEventListener('click', () => iniciarEscaneoParaRegistro());
+    viewEmployeesBtn.addEventListener('click', () => {
+        ocultarTodasPantallas();
+        mostrarListaEmpleados();
+    });
+    backFromAdminBtn.addEventListener('click', mostrarMainScreen);
     
-    if (newScanBtn) {
-        newScanBtn.addEventListener('click', resetearEscaneo);
-    }
+    backFromEmployeesListBtn.addEventListener('click', () => {
+        ocultarTodasPantallas();
+        mostrarAdminMenu();
+    });
     
-    if (cancelScanBtn) {
-        cancelScanBtn.addEventListener('click', detenerEscaneo);
-    }
+    backFromHistoryBtn.addEventListener('click', mostrarMainScreen);
+    cancelScanBtn.addEventListener('click', detenerEscaneo);
+}
+
+function hacerLogin() {
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value;
     
-    // Botones del menú de inicio de sesión
-    if (registerEmployeeBtn) {
-        registerEmployeeBtn.addEventListener('click', () => iniciarEscaneoParaRegistro());
-    }
-    
-    if (viewEmployeesBtn) {
-        viewEmployeesBtn.addEventListener('click', mostrarListaEmpleados);
-    }
-    
-    if (backFromLoginMenuBtn) {
-        backFromLoginMenuBtn.addEventListener('click', volverInicio);
-    }
-    
-    if (backFromEmployeesListBtn) {
-        backFromEmployeesListBtn.addEventListener('click', mostrarLoginMenu);
+    if (username === VALID_USERNAME && password === VALID_PASSWORD) {
+        isLoggedIn = true;
+        loginError.style.display = 'none';
+        mostrarMainScreen();
+    } else {
+        loginError.style.display = 'block';
+        usernameInput.value = '';
+        passwordInput.value = '';
+        usernameInput.focus();
     }
 }
 
-function mostrarLoginMenu() {
-    hospitalTitle.style.display = 'none';
-    buttonsContainer.style.display = 'none';
-    loginMenuScreen.style.display = 'flex';
-    actionSelectionScreen.style.display = 'none';
-    historyScreen.style.display = 'none';
-    resultContainer.style.display = 'none';
-    employeesListScreen.style.display = 'none';
-    container.style.justifyContent = 'center';
-    container.style.paddingTop = '0';
+function mostrarPantallaAccion() {
+    actionSelectionScreen.style.display = 'flex';
+    mainScreen.style.display = 'none';
+}
+
+function mostrarAdminMenu() {
+    adminMenuScreen.style.display = 'flex';
+    mainScreen.style.display = 'none';
 }
 
 function mostrarListaEmpleados() {
-    loginMenuScreen.style.display = 'none';
     employeesListScreen.style.display = 'flex';
     actualizarListaEmpleados();
 }
@@ -199,46 +223,24 @@ function actualizarListaEmpleados() {
     registeredEmployees.forEach(empleado => {
         const item = document.createElement('div');
         item.className = 'employee-item';
-        
         item.innerHTML = `
             <div class="employee-nombre">${empleado.nombre}</div>
             <div class="employee-cedula">C.I: ${empleado.cedula}</div>
-            <div class="employee-institucion">${empleado.institucion}</div>
+            <div class="employee-institucion">${empleado.institucion || 'Hospital Ernesto Segundo Paolini'}</div>
         `;
-        
         employeesListContainer.appendChild(item);
     });
 }
 
-function mostrarPantallaAccion() {
-    hospitalTitle.style.display = 'none';
-    buttonsContainer.style.display = 'none';
-    actionSelectionScreen.style.display = 'flex';
-    historyScreen.style.display = 'none';
-    resultContainer.style.display = 'none';
-    loginMenuScreen.style.display = 'none';
-    employeesListScreen.style.display = 'none';
-    container.style.justifyContent = 'center';
-    container.style.paddingTop = '0';
-}
-
 function mostrarHistorial() {
-    hospitalTitle.style.display = 'none';
-    buttonsContainer.style.display = 'none';
-    actionSelectionScreen.style.display = 'none';
     historyScreen.style.display = 'flex';
-    resultContainer.style.display = 'none';
-    loginMenuScreen.style.display = 'none';
-    employeesListScreen.style.display = 'none';
-    container.style.justifyContent = 'center';
-    container.style.paddingTop = '0';
     actualizarListaHistorial();
 }
 
 function actualizarListaHistorial() {
     historyList.innerHTML = '';
     
-    const ultimosRegistros = [...attendanceHistory].reverse().slice(0, 10);
+    const ultimosRegistros = [...attendanceHistory].reverse().slice(0, 20);
     
     if (ultimosRegistros.length === 0) {
         historyList.innerHTML = '<div class="no-history">No hay registros de asistencia</div>';
@@ -267,47 +269,34 @@ function actualizarListaHistorial() {
             <div class="history-accion ${registro.accion}">${registro.accion === 'entrada' ? '🚪 ENTRADA' : '🚶 SALIDA'}</div>
             <div class="history-fecha">${fechaFormateada} ${horaFormateada}</div>
         `;
-        
         historyList.appendChild(item);
     });
 }
 
-function volverInicio() {
-    hospitalTitle.style.display = 'block';
-    actionSelectionScreen.style.display = 'none';
-    historyScreen.style.display = 'none';
-    resultContainer.style.display = 'none';
-    videoContainer.style.display = 'none';
-    buttonsContainer.style.display = 'flex';
-    loginMenuScreen.style.display = 'none';
-    employeesListScreen.style.display = 'none';
-    container.style.justifyContent = 'center';
-    container.style.paddingTop = '0';
-    
-    const overlay = document.querySelector('.scanning-overlay');
-    const instructions = document.querySelector('.scanning-instructions');
-    if (overlay) overlay.remove();
-    if (instructions) instructions.remove();
-    body.classList.remove('scanning-active');
-    
-    currentAction = null;
-}
-
 function iniciarEscaneoParaRegistro() {
     currentAction = 'registro';
-    hospitalTitle.style.display = 'none';
-    loginMenuScreen.style.display = 'none';
-    resultContainer.style.display = 'none';
+    ocultarTodasPantallas();
     iniciarEscaneo();
 }
 
 function iniciarEscaneoConAccion(accion) {
     currentAction = accion;
-    hospitalTitle.style.display = 'none';
-    actionSelectionScreen.style.display = 'none';
-    historyScreen.style.display = 'none';
-    resultContainer.style.display = 'none';
+    ocultarTodasPantallas();
     iniciarEscaneo();
+}
+
+function precargarCamara() {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia && !cameraPermissionGranted) {
+        navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'environment' } 
+        })
+        .then(stream => {
+            cameraPermissionGranted = true;
+            stream.getTracks().forEach(track => track.stop());
+            console.log('✅ Permiso de cámara pre-obtenido');
+        })
+        .catch(err => console.log('No se pudo pre-obtener permiso:', err));
+    }
 }
 
 function registrarServiceWorker() {
@@ -322,9 +311,7 @@ function registrarServiceWorker() {
 
 function crearOverlayEscaneo() {
     const overlayAnterior = document.querySelector('.scanning-overlay');
-    if (overlayAnterior) {
-        overlayAnterior.remove();
-    }
+    if (overlayAnterior) overlayAnterior.remove();
     
     const overlay = document.createElement('div');
     overlay.className = 'scanning-overlay';
@@ -337,8 +324,8 @@ function crearOverlayEscaneo() {
     const instructions = document.createElement('div');
     instructions.className = 'scanning-instructions';
     instructions.textContent = currentAction === 'registro' ? 
-        'Escanea el código QR del empleado para registrarlo' : 
-        'Coloca el código QR dentro del recuadro';
+        '📝 Escanea el QR del empleado para REGISTRARLO' : 
+        '📱 Coloca el código QR dentro del recuadro';
     
     body.appendChild(overlay);
     body.appendChild(instructions);
@@ -355,9 +342,6 @@ async function iniciarEscaneo() {
         body.classList.add('scanning-active');
         crearOverlayEscaneo();
         videoContainer.style.display = 'flex';
-        buttonsContainer.style.display = 'none';
-        container.style.justifyContent = 'flex-start';
-        container.style.paddingTop = '0';
         
         const constraints = {
             video: {
@@ -368,14 +352,11 @@ async function iniciarEscaneo() {
         };
         
         videoStream = await navigator.mediaDevices.getUserMedia(constraints);
-        
         video.srcObject = videoStream;
         video.setAttribute('playsinline', true);
         
         await new Promise((resolve) => {
-            video.onloadedmetadata = () => {
-                resolve();
-            };
+            video.onloadedmetadata = () => resolve();
         });
         
         await video.play();
@@ -384,9 +365,7 @@ async function iniciarEscaneo() {
         scanningActive = true;
         realizarEscaneo();
         
-        if (scanTimeout) {
-            clearTimeout(scanTimeout);
-        }
+        if (scanTimeout) clearTimeout(scanTimeout);
         scanTimeout = setTimeout(function loop() {
             if (!scanningActive) return;
             realizarEscaneo();
@@ -395,20 +374,17 @@ async function iniciarEscaneo() {
         
     } catch (error) {
         console.error('❌ Error:', error);
-        mostrarAlertaError('No se pudo acceder a la cámara. Por favor, verifica los permisos.');
+        mostrarAlertaError('No se pudo acceder a la cámara. Verifica los permisos.');
         detenerEscaneo();
     }
 }
 
 function realizarEscaneo() {
-    if (!scanningActive || !video || video.readyState < 2) {
-        return;
-    }
+    if (!scanningActive || !video || video.readyState < 2) return;
     
     try {
         const width = video.videoWidth;
         const height = video.videoHeight;
-        
         if (width === 0 || height === 0) return;
         
         canvas.width = width;
@@ -416,18 +392,13 @@ function realizarEscaneo() {
         
         const context = canvas.getContext('2d', { willReadFrequently: true });
         context.drawImage(video, 0, 0, width, height);
-        
         const imageData = context.getImageData(0, 0, width, height);
-        
-        const code = jsQR(imageData.data, width, height, {
-            inversionAttempts: "dontInvert",
-        });
+        const code = jsQR(imageData.data, width, height, { inversionAttempts: "dontInvert" });
         
         if (code) {
             console.log('✅ QR detectado:', code.data);
             procesarResultado(code.data);
         }
-        
     } catch (error) {
         console.error('Error en escaneo:', error);
     }
@@ -435,26 +406,14 @@ function realizarEscaneo() {
 
 function procesarResultado(data) {
     scanningActive = false;
-    
-    if (scanTimeout) {
-        clearTimeout(scanTimeout);
-        scanTimeout = null;
-    }
-    
-    if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-        videoStream = null;
-    }
-    
-    if (video) {
-        video.srcObject = null;
-    }
+    if (scanTimeout) clearTimeout(scanTimeout);
+    if (videoStream) videoStream.getTracks().forEach(track => track.stop());
+    if (video) video.srcObject = null;
     
     const overlay = document.querySelector('.scanning-overlay');
     const instructions = document.querySelector('.scanning-instructions');
     if (overlay) overlay.remove();
     if (instructions) instructions.remove();
-    
     body.classList.remove('scanning-active');
     
     if (window.navigator && window.navigator.vibrate) {
@@ -463,7 +422,6 @@ function procesarResultado(data) {
     
     videoContainer.style.display = 'none';
     
-    // Parsear datos del QR
     let qrData = null;
     let nombre = 'No disponible';
     let cedula = 'No disponible';
@@ -477,13 +435,11 @@ function procesarResultado(data) {
         institucion = qrData.institucion || 'No disponible';
         tipo = qrData.tipo || null;
     } catch (e) {
-        console.log('No es JSON válido');
         mostrarAlertaError('QR inválido: El código escaneado no tiene el formato correcto.');
-        volverInicio();
+        mostrarMainScreen();
         return;
     }
     
-    // Manejar según el tipo de acción
     if (currentAction === 'registro') {
         procesarRegistroEmpleado(qrData, nombre, cedula, institucion, tipo);
     } else if (currentAction === 'entrada' || currentAction === 'salida') {
@@ -492,30 +448,26 @@ function procesarResultado(data) {
 }
 
 function procesarRegistroEmpleado(qrData, nombre, cedula, institucion, tipo) {
-    // Validar que el QR sea del tipo correcto para registro de asistencia
     if (tipo !== 'registro_asistencia') {
         mostrarAlertaError('QR inválido: Este código no es válido para registro de empleados. Tipo esperado: "registro_asistencia"');
-        volverInicio();
+        mostrarMainScreen();
         return;
     }
     
-    // Validar datos requeridos
     if (cedula === 'No disponible' || nombre === 'No disponible') {
-        mostrarAlertaError('QR inválido: El código escaneado no contiene los datos requeridos (empleado_id y nombre).');
-        volverInicio();
+        mostrarAlertaError('QR inválido: El código no contiene los datos requeridos (empleado_id y nombre).');
+        mostrarMainScreen();
         return;
     }
     
-    // Verificar si el empleado ya está registrado
     const empleadoExistente = registeredEmployees.find(emp => emp.cedula === cedula);
     
     if (empleadoExistente) {
-        mostrarAlertaError(`⚠️ Empleado YA REGISTRADO\n\nNombre: ${empleadoExistente.nombre}\nCédula: ${cedula}\n\nNo se puede registrar nuevamente.`);
-        volverInicio();
+        mostrarAlertaError(`⚠️ EMPLEADO YA REGISTRADO\n\nNombre: ${empleadoExistente.nombre}\nCédula: ${cedula}`);
+        mostrarMainScreen();
         return;
     }
     
-    // Registrar nuevo empleado
     const nuevoEmpleado = {
         cedula: cedula,
         nombre: nombre,
@@ -526,52 +478,36 @@ function procesarRegistroEmpleado(qrData, nombre, cedula, institucion, tipo) {
     registeredEmployees.push(nuevoEmpleado);
     guardarEmpleados();
     
-    // Mostrar alerta de éxito
-    mostrarAlertaExito(`✅ EMPLEADO REGISTRADO EXITOSAMENTE\n\nNombre: ${nombre}\nCédula: ${cedula}\nInstitución: ${institucion}\n\nEl empleado ya puede registrar su asistencia.`);
-    volverInicio();
+    mostrarAlertaExito(`✅ EMPLEADO REGISTRADO\n\nNombre: ${nombre}\nCédula: ${cedula}\nInstitución: ${institucion}`);
+    mostrarMainScreen();
 }
 
 function procesarAsistencia(qrData, nombre, cedula, institucion, tipo) {
-    // Validar que el QR sea del tipo correcto
     if (tipo !== 'registro_asistencia') {
-        mostrarAlertaError('QR inválido: Este código no es válido para registro de asistencia. Tipo esperado: "registro_asistencia"');
-        volverInicio();
+        mostrarAlertaError('QR inválido: Este código no es válido para registro de asistencia.');
+        mostrarMainScreen();
         return;
     }
     
-    // Validar datos requeridos
     if (cedula === 'No disponible') {
-        mostrarAlertaError('QR inválido: El código escaneado no contiene un empleado_id válido.');
-        volverInicio();
+        mostrarAlertaError('QR inválido: El código no contiene un empleado_id válido.');
+        mostrarMainScreen();
         return;
     }
     
-    // Buscar empleado en la base de datos local
     const empleadoRegistrado = registeredEmployees.find(emp => emp.cedula === cedula);
     
     if (!empleadoRegistrado) {
-        mostrarAlertaError(`❌ EMPLEADO NO REGISTRADO\n\nCédula: ${cedula}\n\nEste empleado no está registrado en el sistema. Por favor, contacte al administrador para registrar al empleado primero.`);
-        volverInicio();
+        mostrarAlertaError(`❌ EMPLEADO NO REGISTRADO\n\nCédula: ${cedula}\n\nDebe registrarse primero en el menú ADMINISTRADOR.`);
+        mostrarMainScreen();
         return;
     }
     
-    // Usar el nombre del empleado registrado (más confiable)
     const nombreFinal = empleadoRegistrado.nombre;
-    const institucionFinal = empleadoRegistrado.institucion || institucion;
-    
     const ahora = new Date();
-    const fechaFormateada = ahora.toLocaleDateString('es-ES', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
-    const horaFormateada = ahora.toLocaleTimeString('es-ES', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    });
+    const fechaFormateada = ahora.toLocaleDateString('es-ES');
+    const horaFormateada = ahora.toLocaleTimeString('es-ES');
     
-    // Guardar en historial
     const registro = {
         nombre: nombreFinal,
         cedula: cedula,
@@ -585,65 +521,44 @@ function procesarAsistencia(qrData, nombre, cedula, institucion, tipo) {
     const accionTexto = currentAction === 'entrada' ? 'ENTRADA' : 'SALIDA';
     const colorAccion = currentAction === 'entrada' ? '#4CAF50' : '#f44336';
     
-    // Ocultar todas las otras pantallas
-    hospitalTitle.style.display = 'none';
-    buttonsContainer.style.display = 'none';
-    actionSelectionScreen.style.display = 'none';
-    historyScreen.style.display = 'none';
-    loginMenuScreen.style.display = 'none';
-    employeesListScreen.style.display = 'none';
-    
-    container.style.justifyContent = 'center';
-    container.style.paddingTop = '0';
-    
-    resultContainer.style.display = 'block';
+    resultContainer.style.display = 'flex';
     scanResult.innerHTML = `
         <div class="result-card">
             <div class="result-header" style="background: ${colorAccion};">
                 <span class="result-action-icon">${currentAction === 'entrada' ? '🚪' : '🚶'}</span>
                 <span class="result-action-text">${accionTexto}</span>
             </div>
-            
             <div class="result-body">
                 <div class="result-field">
                     <span class="field-label">NOMBRES:</span>
                     <span class="field-value">${nombreFinal}</span>
                 </div>
-                
                 <div class="result-field">
                     <span class="field-label">CEDULA:</span>
                     <span class="field-value">${cedula}</span>
                 </div>
-                
-                <div class="result-field">
-                    <span class="field-label">INSTITUCIÓN:</span>
-                    <span class="field-value">${institucionFinal}</span>
-                </div>
-                
                 <div class="result-field">
                     <span class="field-label">FECHA:</span>
                     <span class="field-value">${fechaFormateada}</span>
                 </div>
-                
                 <div class="result-field">
                     <span class="field-label">HORA:</span>
                     <span class="field-value result-time">${horaFormateada}</span>
                 </div>
             </div>
-            
             <div class="result-footer">
-                <button id="back-to-home-btn" class="btn btn-primary result-home-btn">
-                    ← VOLVER AL INICIO
-                </button>
+                <button id="back-to-home-btn" class="btn result-home-btn">← VOLVER AL INICIO</button>
             </div>
         </div>
     `;
     
-    document.getElementById('back-to-home-btn').addEventListener('click', volverInicio);
+    document.getElementById('back-to-home-btn').addEventListener('click', () => {
+        resultContainer.style.display = 'none';
+        mostrarMainScreen();
+    });
 }
 
 function mostrarAlertaError(mensaje) {
-    // Crear alerta personalizada
     const alerta = document.createElement('div');
     alerta.className = 'custom-alert error-alert';
     alerta.innerHTML = `
@@ -654,16 +569,8 @@ function mostrarAlertaError(mensaje) {
         </div>
     `;
     document.body.appendChild(alerta);
-    
-    const btn = alerta.querySelector('.alert-btn');
-    btn.addEventListener('click', () => {
-        alerta.remove();
-    });
-    
-    // Auto-cerrar después de 5 segundos
-    setTimeout(() => {
-        if (alerta.parentNode) alerta.remove();
-    }, 5000);
+    alerta.querySelector('.alert-btn').addEventListener('click', () => alerta.remove());
+    setTimeout(() => { if (alerta.parentNode) alerta.remove(); }, 5000);
 }
 
 function mostrarAlertaExito(mensaje) {
@@ -673,92 +580,51 @@ function mostrarAlertaExito(mensaje) {
         <div class="alert-content">
             <div class="alert-icon">✅</div>
             <div class="alert-message">${mensaje.replace(/\n/g, '<br>')}</div>
-            <button class="alert-btn success-btn">Aceptar</button>
+            <button class="alert-btn">Aceptar</button>
         </div>
     `;
     document.body.appendChild(alerta);
-    
-    const btn = alerta.querySelector('.alert-btn');
-    btn.addEventListener('click', () => {
-        alerta.remove();
-    });
-    
-    setTimeout(() => {
-        if (alerta.parentNode) alerta.remove();
-    }, 4000);
+    alerta.querySelector('.alert-btn').addEventListener('click', () => alerta.remove());
+    setTimeout(() => { if (alerta.parentNode) alerta.remove(); }, 4000);
 }
 
 function detenerEscaneo() {
     scanningActive = false;
-    
-    if (scanTimeout) {
-        clearTimeout(scanTimeout);
-        scanTimeout = null;
-    }
-    
-    if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-        videoStream = null;
-    }
-    
-    if (video) {
-        video.srcObject = null;
-    }
+    if (scanTimeout) clearTimeout(scanTimeout);
+    if (videoStream) videoStream.getTracks().forEach(track => track.stop());
+    if (video) video.srcObject = null;
     
     const overlay = document.querySelector('.scanning-overlay');
     const instructions = document.querySelector('.scanning-instructions');
     if (overlay) overlay.remove();
     if (instructions) instructions.remove();
-    
     body.classList.remove('scanning-active');
     
-    volverInicio();
-}
-
-function resetearEscaneo() {
-    detenerEscaneo();
+    mostrarMainScreen();
 }
 
 // PWA Installation
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    
-    if (!document.getElementById('installButton') && buttonsContainer) {
-        const btn = document.createElement('button');
-        btn.id = 'installButton';
-        btn.className = 'btn btn-primary';
-        btn.textContent = '📲 INSTALAR APP';
-        btn.onclick = instalarPWA;
-        buttonsContainer.appendChild(btn);
-    }
-});
-
-function instalarPWA() {
-    if (!deferredPrompt) {
-        alert('No disponible para instalar ahora');
-        return;
-    }
-    
-    deferredPrompt.prompt();
-    deferredPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === 'accepted') {
-            console.log('Usuario aceptó instalar');
+    const btn = document.createElement('button');
+    btn.id = 'installButton';
+    btn.className = 'btn btn-primary';
+    btn.textContent = '📲 INSTALAR APP';
+    btn.onclick = () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(() => { deferredPrompt = null; btn.remove(); });
         }
-        deferredPrompt = null;
-        document.getElementById('installButton')?.remove();
-    });
-}
-
-window.addEventListener('appinstalled', () => {
-    document.getElementById('installButton')?.remove();
+    };
+    setTimeout(() => {
+        if (document.querySelector('.buttons-container') && !document.getElementById('installButton')) {
+            document.querySelector('.buttons-container').appendChild(btn);
+        }
+    }, 1000);
 });
 
 window.addEventListener('beforeunload', () => {
-    if (videoStream) {
-        videoStream.getTracks().forEach(track => track.stop());
-    }
-    if (scanTimeout) {
-        clearTimeout(scanTimeout);
-    }
+    if (videoStream) videoStream.getTracks().forEach(track => track.stop());
+    if (scanTimeout) clearTimeout(scanTimeout);
 });

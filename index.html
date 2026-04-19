@@ -14,75 +14,99 @@
 </head>
 <body>
     <div class="container">
-        <!-- Título del hospital -->
-        <div class="hospital-title">
+        <!-- Título del hospital (visible solo en pantalla de inicio) -->
+        <div class="hospital-title" id="hospitalTitle">
             HOSPITAL<br>
             ERNESTO<br>
             SEGUNDO<br>
             PAOLINI
         </div>
         
-        <!-- Botones principales -->
-        <div class="buttons-container">
-            <button id="loginButton" class="btn btn-primary">
-                INICIAR SESION
-            </button>
-            
-            <button id="scanButton" class="btn btn-primary">
-                ESCANEAR
-            </button>
-            
-            <button id="historyButton" class="btn btn-secondary">
-                HISTORIAL
-            </button>
+        <!-- Pantalla de LOGIN -->
+        <div id="login-screen" class="login-screen">
+            <div class="login-box">
+                <h2 class="login-title">INICIAR SESIÓN</h2>
+                <div class="input-group">
+                    <input type="text" id="username" class="login-input" placeholder="USUARIO" autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <input type="password" id="password" class="login-input" placeholder="CONTRASEÑA">
+                </div>
+                <button id="doLoginBtn" class="btn btn-login">INGRESAR</button>
+                <div id="login-error" class="login-error" style="display: none;">Usuario o contraseña incorrectos</div>
+            </div>
+        </div>
+        
+        <!-- Pantalla principal (botones) -->
+        <div id="main-screen" style="display: none;">
+            <div class="hospital-title">
+                HOSPITAL<br>
+                ERNESTO<br>
+                SEGUNDO<br>
+                PAOLINI
+            </div>
+            <div class="buttons-container">
+                <button id="scanButton" class="btn btn-primary">
+                    ESCANEAR
+                </button>
+                <button id="adminButton" class="btn btn-admin">
+                    ADMINISTRADOR
+                </button>
+                <button id="historyButton" class="btn btn-secondary">
+                    HISTORIAL
+                </button>
+                <button id="logoutButton" class="btn btn-logout">
+                    CERRAR SESIÓN
+                </button>
+            </div>
         </div>
         
         <!-- Pantalla de selección de acción (Entrada/Salida) -->
-        <div id="action-selection-screen" class="action-selection-screen" style="display: none;">
-            <h2 class="action-title">SELECCIONE ACCIÓN</h2>
+        <div id="action-selection-screen" class="fullscreen-panel" style="display: none;">
+            <h2 class="panel-title">SELECCIONE ACCIÓN</h2>
             <div class="action-buttons">
                 <button id="entry-btn" class="btn action-btn entry-btn">
-                    ENTRADA
+                    🚪 ENTRADA
                 </button>
                 <button id="exit-btn" class="btn action-btn exit-btn">
-                    SALIDA
+                    🚶 SALIDA
                 </button>
             </div>
-            <button id="back-from-action-btn" class="btn btn-secondary back-btn">
+            <button id="back-from-action-btn" class="btn btn-secondary back-btn-full">
                 ← VOLVER
             </button>
         </div>
         
-        <!-- Pantalla de menú de inicio de sesión -->
-        <div id="login-menu-screen" class="login-menu-screen" style="display: none;">
-            <h2 class="login-title">MENÚ ADMINISTRADOR</h2>
-            <div class="login-buttons">
-                <button id="register-employee-btn" class="btn login-menu-btn register-btn">
+        <!-- Pantalla de menú ADMINISTRADOR -->
+        <div id="admin-menu-screen" class="fullscreen-panel" style="display: none;">
+            <h2 class="panel-title">MENÚ ADMINISTRADOR</h2>
+            <div class="admin-buttons">
+                <button id="register-employee-btn" class="btn admin-btn register-btn">
                     📝 REGISTRAR EMPLEADO
                 </button>
-                <button id="view-employees-btn" class="btn login-menu-btn view-btn">
+                <button id="view-employees-btn" class="btn admin-btn view-btn">
                     👥 VER EMPLEADOS
                 </button>
             </div>
-            <button id="back-from-login-menu-btn" class="btn btn-secondary back-btn">
+            <button id="back-from-admin-btn" class="btn btn-secondary back-btn-full">
                 ← VOLVER
             </button>
         </div>
         
         <!-- Pantalla de lista de empleados -->
-        <div id="employees-list-screen" class="employees-list-screen" style="display: none;">
-            <h2 class="employees-title">EMPLEADOS REGISTRADOS</h2>
-            <div id="employees-list-container" class="employees-list-container"></div>
-            <button id="back-from-employees-list-btn" class="btn btn-secondary back-btn">
+        <div id="employees-list-screen" class="fullscreen-panel" style="display: none;">
+            <h2 class="panel-title">EMPLEADOS REGISTRADOS</h2>
+            <div id="employees-list-container" class="scrollable-list"></div>
+            <button id="back-from-employees-list-btn" class="btn btn-secondary back-btn-full">
                 ← VOLVER
             </button>
         </div>
         
         <!-- Pantalla de historial -->
-        <div id="history-screen" class="history-screen" style="display: none;">
-            <h2 class="history-title">ÚLTIMOS REGISTROS</h2>
-            <div id="history-list" class="history-list"></div>
-            <button id="back-from-history-btn" class="btn btn-secondary back-btn">
+        <div id="history-screen" class="fullscreen-panel" style="display: none;">
+            <h2 class="panel-title">ÚLTIMOS REGISTROS</h2>
+            <div id="history-list" class="scrollable-list"></div>
+            <button id="back-from-history-btn" class="btn btn-secondary back-btn-full">
                 ← VOLVER
             </button>
         </div>
@@ -92,12 +116,12 @@
             <video id="qr-video" playsinline></video>
             <canvas id="qr-canvas" style="display: none;"></canvas>
             <div class="video-controls">
-                <button id="cancel-scan-btn" class="btn btn-secondary">Cancelar</button>
+                <button id="cancel-scan-btn" class="btn btn-secondary">CANCELAR</button>
             </div>
         </div>
         
         <!-- Resultado del escaneo -->
-        <div id="result-container" style="display: none;">
+        <div id="result-container" class="fullscreen-panel" style="display: none;">
             <div id="scan-result" class="result-box"></div>
         </div>
         
