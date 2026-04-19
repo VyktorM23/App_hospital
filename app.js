@@ -318,9 +318,17 @@ function actualizarTablaHistorial() {
         const fechaFormateada = fecha.toLocaleDateString('es-ES');
         const horaFormateada = fecha.toLocaleTimeString('es-ES');
         
-        // Clase de color según entrada o salida
-        const accionClass = registro.accion === 'entrada' ? 'accion-entrada' : 'accion-salida';
-        const accionTexto = registro.accion === 'entrada' ? '🚪 ENTRADA' : '🚶 SALIDA';
+        // Asignar clase según entrada o salida
+        let accionClass = '';
+        let accionTexto = '';
+        
+        if (registro.accion === 'entrada') {
+            accionClass = 'accion-entrada';
+            accionTexto = '🚪 ENTRADA';
+        } else {
+            accionClass = 'accion-salida';
+            accionTexto = '🚶 SALIDA';
+        }
         
         row.innerHTML = `
             <td style="font-weight: 500;">${registro.nombre}</td>
@@ -330,6 +338,11 @@ function actualizarTablaHistorial() {
         `;
         tableBody.appendChild(row);
     });
+    
+    // Forzar reflow para asegurar que los estilos se apliquen
+    console.log('✅ Tabla actualizada con colores:', 
+        document.querySelectorAll('.accion-entrada').length, 'entradas,',
+        document.querySelectorAll('.accion-salida').length, 'salidas');
 }
 
 function precargarCamara() {
