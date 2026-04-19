@@ -36,7 +36,7 @@ body {
     position: relative;
 }
 
-/* Pantalla principal */
+/* Pantalla principal - CORREGIDO para que no se salgan los botones */
 .main-screen {
     width: 100%;
     height: 100%;
@@ -45,13 +45,14 @@ body {
     justify-content: space-between;
     align-items: center;
     background: #0066B3;
-    padding: 50px 20px 40px;
+    padding: 40px 20px 30px;
+    overflow: hidden;
 }
 
 /* Título arriba */
 .hospital-title {
     color: white;
-    font-size: 48px;
+    font-size: 42px;
     font-weight: 800;
     text-align: center;
     line-height: 1.2;
@@ -59,18 +60,20 @@ body {
     letter-spacing: 3px;
     text-transform: uppercase;
     width: 100%;
+    flex-shrink: 0;
 }
 
-/* Botones centrales (uno debajo del otro) */
+/* Contenedor de botones centrales */
 .center-buttons {
     width: 100%;
     max-width: 280px;
     display: flex;
     flex-direction: column;
     gap: 20px;
+    flex-shrink: 0;
 }
 
-/* Botones inferiores (uno al lado del otro) */
+/* Contenedor de botones inferiores - FIJO EN LA PARTE BAJA */
 .bottom-buttons {
     width: 100%;
     max-width: 280px;
@@ -78,6 +81,8 @@ body {
     flex-direction: row;
     gap: 15px;
     justify-content: center;
+    flex-shrink: 0;
+    margin-top: auto;
 }
 
 /* Estilos de botones */
@@ -126,12 +131,13 @@ body {
 
 /* Botones inferiores */
 .btn-bottom {
-    padding: 12px 20px;
+    padding: 12px 16px;
     font-size: 14px;
     font-weight: 600;
     flex: 1;
     text-align: center;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    white-space: nowrap;
 }
 
 .history-bottom-btn {
@@ -657,10 +663,14 @@ body.scanning-active .main-screen {
     }
 }
 
-/* Responsive */
+/* Responsive para pantallas pequeñas */
 @media (max-width: 480px) {
+    .main-screen {
+        padding: 25px 15px 20px;
+    }
+    
     .hospital-title {
-        font-size: 40px;
+        font-size: 34px;
     }
     
     .btn-login-main, .btn-scan-main {
@@ -669,17 +679,44 @@ body.scanning-active .main-screen {
     }
     
     .btn-bottom {
-        padding: 10px 16px;
+        padding: 10px 12px;
         font-size: 12px;
     }
     
-    .panel-title {
-        font-size: 24px;
+    .center-buttons {
+        gap: 15px;
     }
     
-    .employees-table th, .employees-table td,
-    .history-table th, .history-table td {
-        padding: 8px;
+    .bottom-buttons {
+        gap: 12px;
+    }
+    
+    .panel-title {
+        font-size: 22px;
+    }
+}
+
+@media (max-height: 600px) {
+    .main-screen {
+        padding: 15px 15px 15px;
+    }
+    
+    .hospital-title {
+        font-size: 28px;
+        margin-bottom: 5px;
+    }
+    
+    .btn-login-main, .btn-scan-main {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+    
+    .center-buttons {
+        gap: 10px;
+    }
+    
+    .btn-bottom {
+        padding: 8px 10px;
         font-size: 11px;
     }
 }
@@ -687,8 +724,8 @@ body.scanning-active .main-screen {
 /* Soporte para iPhone notch */
 @supports (padding: max(0px)) {
     .main-screen {
-        padding-top: max(50px, env(safe-area-inset-top));
-        padding-bottom: max(40px, env(safe-area-inset-bottom));
+        padding-top: max(40px, env(safe-area-inset-top));
+        padding-bottom: max(30px, env(safe-area-inset-bottom));
     }
     
     .scanning-instructions {
