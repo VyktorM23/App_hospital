@@ -253,7 +253,7 @@ function limpiarDatos() {
 }
 
 function mostrarAcercaDe() {
-    mostrarAlertaInfo('📱 HOSPITAL ERNESTO SEGUNDO PAOLINI\n\nSistema de Control de Asistencia\nVersión 1.0\n\nDesarrollado para RR.HH.\n\nUsuario: admin\nContraseña: 1234');
+    mostrarAlertaInfo('HOSPITAL ERNESTO SEGUNDO PAOLINI\n\nSistema de Control de Asistencia\nVersión 1.0\n\nDesarrollado para RR.HH.\n\nDesarrolado por:\n•T.S.U. Victor Medina\n•T.S.U. Carlos Roa\n•T.S.U. Eduardo Castellano\n•T.S.U. Leonel Marquez ');
 }
 
 function hacerLogin() {
@@ -324,10 +324,10 @@ function actualizarTablaHistorial() {
         
         if (registro.accion === 'entrada') {
             accionClass = 'accion-entrada';
-            accionTexto = '🚪 ENTRADA';
+            accionTexto = 'ENTRADA';
         } else {
             accionClass = 'accion-salida';
-            accionTexto = '🚶 SALIDA';
+            accionTexto = 'SALIDA';
         }
         
         row.innerHTML = `
@@ -384,15 +384,15 @@ function crearOverlayEscaneo() {
     const instructions = document.createElement('div');
     instructions.className = 'scanning-instructions';
     instructions.textContent = currentAction === 'registro' ? 
-        '📝 Escanea el QR del empleado para REGISTRARLO' : 
-        '📱 Coloca el código QR dentro del recuadro';
+        'Escanea el QR del empleado para REGISTRARLO' : 
+        'Coloca el código QR dentro del recuadro';
     
     body.appendChild(overlay);
     body.appendChild(instructions);
 }
 
 async function iniciarEscaneo() {
-    console.log('📱 Iniciando escaneo...');
+    console.log('Iniciando escaneo...');
     
     try {
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -592,7 +592,7 @@ function procesarAsistencia(qrData, nombre, cedula, institucion, tipo) {
     scanResult.innerHTML = `
         <div class="result-card">
             <div class="result-header" style="background: ${colorAccion};">
-                <span class="result-action-icon">${currentAction === 'entrada' ? '🚪' : '🚶'}</span>
+                <span class="result-action-icon">${currentAction === 'entrada' ? '' : ''}</span>
                 <span class="result-action-text">${accionTexto}</span>
             </div>
             <div class="result-body">
@@ -711,7 +711,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
     const btn = document.createElement('button');
     btn.id = 'installButton';
     btn.className = 'btn btn-login-main';
-    btn.textContent = '📲 INSTALAR APP';
+    btn.textContent = 'INSTALAR APP';
     btn.onclick = () => {
         if (deferredPrompt) {
             deferredPrompt.prompt();
