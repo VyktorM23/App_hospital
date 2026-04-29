@@ -1,4 +1,4 @@
-// app.js - Control de asistencia con login y pantallas completas
+// app.js - Control de asistencia con Super Usuario y gestión de usuarios
 let deferredPrompt;
 let videoStream = null;
 let scanningActive = false;
@@ -10,10 +10,32 @@ let currentAction = null; // 'entrada', 'salida', o 'registro'
 let attendanceHistory = [];
 let registeredEmployees = [];
 let isLoggedIn = false;
+let currentUser = null;
+let currentUserRole = null;
 
-// Credenciales
-const VALID_USERNAME = "admin";
-const VALID_PASSWORD = "1234";
+// Estructura de usuarios (SOLO EL SUPER USUARIO PUEDE MODIFICAR)
+let systemUsers = [
+    {
+        id: "user_001",
+        username: "superadmin",
+        password: "1234",
+        role: "super_admin",
+        name: "Super Administrador",
+        createdAt: new Date().toISOString()
+    },
+    {
+        id: "user_002", 
+        username: "admin",
+        password: "1234",
+        role: "admin",
+        name: "Administrador Principal",
+        createdAt: new Date().toISOString()
+    }
+];
+
+// Credenciales por defecto (solo para verificación inicial)
+const SUPER_USERNAME = "superadmin";
+const SUPER_PASSWORD = "SuperAdmin123";
 
 // Elementos del DOM
 const mainScreen = document.getElementById('main-screen');
@@ -23,6 +45,7 @@ const actionSelectionScreen = document.getElementById('action-selection-screen')
 const employeesListScreen = document.getElementById('employees-list-screen');
 const historyScreen = document.getElementById('history-screen');
 const configScreen = document.getElementById('config-screen');
+const userManagementScreen = document.getElementById('user-management-screen');
 const resultContainer = document.getElementById('result-container');
 const videoContainer = document.getElementById('video-container');
 const video = document.getElementById('qr-video');
@@ -41,11 +64,38 @@ const cancelLoginBtn = document.getElementById('cancelLoginBtn');
 const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
 const loginError = document.getElementById('login-error');
+const forgotPasswordBtn = document.getElementById('forgot-password-btn');
 
-// Botones admin
+// Botones admin (ahora dinámicos según rol)
 const registerEmployeeBtn = document.getElementById('register-employee-btn');
 const viewEmployeesBtn = document.getElementById('view-employees-btn');
+const manageUsersBtn = document.getElementById('manage-users-btn');
 const logoutFromAdminBtn = document.getElementById('logout-from-admin-btn');
+
+// Botones gestión de usuarios
+const backFromUsersBtn = document.getElementById('back-from-users-btn');
+const createUserBtn = document.getElementById('create-user-btn');
+const usersTableBody = document.getElementById('users-table-body');
+
+// Modal crear/editar usuario
+const userModal = document.getElementById('user-modal');
+const modalTitle = document.getElementById('modal-title');
+const userForm = document.getElementById('user-form');
+const userIdField = document.getElementById('user-id');
+const userUsername = document.getElementById('user-username');
+const userPassword = document.getElementById('user-password');
+const userRole = document.getElementById('user-role');
+const userName = document.getElementById('user-name');
+const cancelModalBtn = document.getElementById('cancel-modal-btn');
+const closeModalBtn = document.getElementById('close-modal-btn');
+
+// Modal recuperación de contraseña
+const recoveryModal = document.getElementById('recovery-modal');
+const recoveryUsername = document.getElementById('recovery-username');
+const recoveryMessage = document.getElementById('recovery-message');
+const sendRecoveryBtn = document.getElementById('send-recovery-btn');
+const cancelRecoveryBtn = document.getElementById('cancel-recovery-btn');
+const closeRecoveryModalBtn = document.getElementById('close-recovery-modal-btn');
 
 // Botones configuración
 const clearDataBtn = document.getElementById('clear-data-btn');
@@ -71,10 +121,11 @@ let cameraPermissionGranted = false;
 
 // Inicializar
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('✅ App iniciada');
-    cargarDatos();
+    console.log('✅ App iniciada con Super Usuario');
+    cargarTodosLosDatos();
     configurarBotones();
     registrarServiceWorker();
+    actualizarMenuSegunRol();
     
     if (typeof jsQR !== 'undefined') {
         console.log('✅ jsQR listo');
@@ -83,7 +134,8 @@ document.addEventListener('DOMContentLoaded', () => {
     precargarCamara();
 });
 
-function cargarDatos() {
+function cargarTodosLosDatos() {
+    // Cargar historial
     const historialGuardado = localStorage.getItem('attendanceHistory');
     if (historialGuardado) {
         try {
@@ -93,6 +145,7 @@ function cargarDatos() {
         }
     }
     
+    // Cargar empleados
     const empleadosGuardados = localStorage.getItem('registeredEmployees');
     if (empleadosGuardados) {
         try {
@@ -101,6 +154,31 @@ function cargarDatos() {
             registeredEmployees = [];
         }
     }
+    
+    // Cargar usuarios del sistema (CRÍTICO: asegurar que siempre exista superadmin)
+    const usuariosGuardados = localStorage.getItem('systemUsers');
+    if (usuariosGuardados) {
+        try {
+            const parsedUsers = JSON.parse(usuariosGuardados);
+            // Verificar que superadmin existe
+            const hasSuperAdmin = parsedUsers.some(u => u.username === 'superadmin');
+            if (hasSuperAdmin) {
+                systemUsers = parsedUsers;
+            } else {
+                // Si no existe superadmin, restaurar el original
+                console.warn('Superadmin no encontrado, restaurando...');
+                saveUsers();
+            }
+        } catch (e) {
+            saveUsers();
+        }
+    } else {
+        saveUsers();
+    }
+}
+
+function saveUsers() {
+    localStorage.setItem('systemUsers', JSON.stringify(systemUsers));
 }
 
 function guardarEmpleados() {
@@ -119,9 +197,12 @@ function mostrarPantallaPrincipal() {
     employeesListScreen.style.display = 'none';
     historyScreen.style.display = 'none';
     configScreen.style.display = 'none';
+    userManagementScreen.style.display = 'none';
     resultContainer.style.display = 'none';
     videoContainer.style.display = 'none';
     isLoggedIn = false;
+    currentUser = null;
+    currentUserRole = null;
 }
 
 function mostrarLogin() {
@@ -132,6 +213,7 @@ function mostrarLogin() {
     employeesListScreen.style.display = 'none';
     historyScreen.style.display = 'none';
     configScreen.style.display = 'none';
+    userManagementScreen.style.display = 'none';
     resultContainer.style.display = 'none';
     usernameInput.value = '';
     passwordInput.value = '';
@@ -146,7 +228,232 @@ function mostrarAdminMenu() {
     employeesListScreen.style.display = 'none';
     historyScreen.style.display = 'none';
     configScreen.style.display = 'none';
+    userManagementScreen.style.display = 'none';
     resultContainer.style.display = 'none';
+}
+
+function mostrarGestionUsuarios() {
+    userManagementScreen.style.display = 'flex';
+    actualizarTablaUsuarios();
+}
+
+function actualizarTablaUsuarios() {
+    if (!usersTableBody) return;
+    
+    usersTableBody.innerHTML = '';
+    
+    if (systemUsers.length === 0) {
+        usersTableBody.innerHTML = '<tr><td colspan="5" class="no-data">No hay usuarios registrados</td></tr>';
+        return;
+    }
+    
+    systemUsers.forEach(usuario => {
+        const row = document.createElement('tr');
+        const rolTexto = usuario.role === 'super_admin' ? '👑 SUPER ADMIN' : '👤 ADMINISTRADOR';
+        const rolClass = usuario.role === 'super_admin' ? 'role-superadmin' : 'role-admin';
+        
+        row.innerHTML = `
+            <td>${usuario.username}</td>
+            <td>${usuario.name || 'Sin nombre'}</td>
+            <td class="${rolClass}">${rolTexto}</td>
+            <td>${new Date(usuario.createdAt).toLocaleDateString()}</td>
+            <td class="user-actions">
+                ${usuario.username !== 'superadmin' ? `
+                    <button class="btn-icon btn-edit-user" data-id="${usuario.id}">✏️</button>
+                    <button class="btn-icon btn-delete-user" data-id="${usuario.id}">🗑️</button>
+                ` : '<span style="opacity:0.5;">🔒</span>'}
+            </td>
+        `;
+        usersTableBody.appendChild(row);
+    });
+    
+    // Agregar event listeners a los botones de editar/eliminar
+    document.querySelectorAll('.btn-edit-user').forEach(btn => {
+        btn.addEventListener('click', () => editarUsuario(btn.dataset.id));
+    });
+    
+    document.querySelectorAll('.btn-delete-user').forEach(btn => {
+        btn.addEventListener('click', () => eliminarUsuario(btn.dataset.id));
+    });
+}
+
+function editarUsuario(userId) {
+    const usuario = systemUsers.find(u => u.id === userId);
+    if (!usuario || usuario.username === 'superadmin') {
+        mostrarAlertaError('No se puede editar el Super Usuario');
+        return;
+    }
+    
+    modalTitle.textContent = 'EDITAR USUARIO';
+    userIdField.value = usuario.id;
+    userUsername.value = usuario.username;
+    userPassword.value = ''; // Dejar vacío para mantener la misma
+    userRole.value = usuario.role;
+    userName.value = usuario.name || '';
+    
+    userModal.style.display = 'flex';
+}
+
+function eliminarUsuario(userId) {
+    const usuario = systemUsers.find(u => u.id === userId);
+    if (!usuario || usuario.username === 'superadmin') {
+        mostrarAlertaError('No se puede eliminar el Super Usuario');
+        return;
+    }
+    
+    if (confirm(`¿Eliminar al usuario "${usuario.username}"?`)) {
+        systemUsers = systemUsers.filter(u => u.id !== userId);
+        saveUsers();
+        actualizarTablaUsuarios();
+        mostrarAlertaExito(`✅ Usuario "${usuario.username}" eliminado`);
+    }
+}
+
+function crearUsuario(event) {
+    event.preventDefault();
+    
+    const username = userUsername.value.trim();
+    const password = userPassword.value;
+    const role = userRole.value;
+    const name = userName.value.trim();
+    const userId = userIdField.value;
+    
+    if (!username || (!password && !userId)) {
+        mostrarAlertaError('Complete todos los campos requeridos');
+        return;
+    }
+    
+    // Verificar si el username ya existe (excepto en edición)
+    const existingUser = systemUsers.find(u => u.username === username && u.id !== userId);
+    if (existingUser) {
+        mostrarAlertaError('El nombre de usuario ya existe');
+        return;
+    }
+    
+    if (userId) {
+        // Editar usuario existente
+        const userIndex = systemUsers.findIndex(u => u.id === userId);
+        if (userIndex !== -1) {
+            systemUsers[userIndex].username = username;
+            if (password) systemUsers[userIndex].password = password;
+            systemUsers[userIndex].role = role;
+            systemUsers[userIndex].name = name;
+            saveUsers();
+            mostrarAlertaExito(`✅ Usuario "${username}" actualizado`);
+        }
+    } else {
+        // Crear nuevo usuario
+        const newUser = {
+            id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
+            username: username,
+            password: password,
+            role: role,
+            name: name,
+            createdAt: new Date().toISOString()
+        };
+        systemUsers.push(newUser);
+        saveUsers();
+        mostrarAlertaExito(`✅ Usuario "${username}" creado exitosamente`);
+    }
+    
+    cerrarModalUsuario();
+    actualizarTablaUsuarios();
+}
+
+function cerrarModalUsuario() {
+    userModal.style.display = 'none';
+    userForm.reset();
+    userIdField.value = '';
+}
+
+// FUNCIÓN DE RECUPERACIÓN DE CONTRASEÑA
+function mostrarRecuperacion() {
+    recoveryModal.style.display = 'flex';
+    recoveryUsername.value = '';
+    recoveryMessage.innerHTML = '';
+}
+
+function recuperarContraseña() {
+    const username = recoveryUsername.value.trim();
+    
+    if (!username) {
+        recoveryMessage.innerHTML = '<span style="color: #ef4444;">❌ Ingrese un nombre de usuario</span>';
+        return;
+    }
+    
+    const user = systemUsers.find(u => u.username === username);
+    
+    if (!user) {
+        recoveryMessage.innerHTML = '<span style="color: #ef4444;">❌ Usuario no encontrado</span>';
+        return;
+    }
+    
+    if (user.role === 'super_admin') {
+        recoveryMessage.innerHTML = `
+            <div style="background: rgba(14, 165, 233, 0.2); padding: 12px; border-radius: 12px;">
+                <strong style="color: #0ea5e9;">👑 SUPER USUARIO</strong><br>
+                Contraseña: <strong style="color: #10b981;">${user.password}</strong><br>
+                <small style="color: #94a3b8;">Guarde esta información en un lugar seguro</small>
+            </div>
+        `;
+    } else {
+        recoveryMessage.innerHTML = `
+            <div style="background: rgba(16, 185, 129, 0.2); padding: 12px; border-radius: 12px;">
+                <strong>✅ Credenciales encontradas</strong><br>
+                Usuario: <strong>${user.username}</strong><br>
+                Contraseña: <strong style="color: #10b981;">${user.password}</strong><br>
+                <small style="color: #94a3b8;">Recomendamos cambiar esta contraseña después de iniciar sesión</small>
+            </div>
+        `;
+    }
+}
+
+function cerrarRecuperacion() {
+    recoveryModal.style.display = 'none';
+    recoveryMessage.innerHTML = '';
+}
+
+function actualizarMenuSegunRol() {
+    // Mostrar u ocultar botón de gestión de usuarios según rol
+    if (manageUsersBtn) {
+        manageUsersBtn.style.display = currentUserRole === 'super_admin' ? 'flex' : 'none';
+    }
+    
+    // En el menú de configuración, mostrar opciones adicionales para super_admin
+    const configButtons = document.querySelector('.config-buttons');
+    if (configButtons && currentUserRole === 'super_admin') {
+        // Verificar si ya existe el botón de respaldo
+        if (!document.getElementById('backup-data-btn')) {
+            const backupBtn = document.createElement('button');
+            backupBtn.id = 'backup-data-btn';
+            backupBtn.className = 'btn config-btn backup-btn';
+            backupBtn.textContent = '💾 RESPALDAR DATOS';
+            backupBtn.onclick = respaldarDatos;
+            configButtons.appendChild(backupBtn);
+        }
+    }
+}
+
+function respaldarDatos() {
+    const backup = {
+        fecha: new Date().toISOString(),
+        usuarios: systemUsers.map(u => ({ ...u, password: '[PROTEGIDA]' })),
+        empleados: registeredEmployees,
+        historial: attendanceHistory,
+        totalEmpleados: registeredEmployees.length,
+        totalRegistros: attendanceHistory.length
+    };
+    
+    const dataStr = JSON.stringify(backup, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `backup_asistencia_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+    
+    mostrarAlertaExito('✅ Respaldo generado exitosamente');
 }
 
 function mostrarConfiguracion() {
@@ -157,6 +464,7 @@ function mostrarConfiguracion() {
     actionSelectionScreen.style.display = 'none';
     employeesListScreen.style.display = 'none';
     historyScreen.style.display = 'none';
+    userManagementScreen.style.display = 'none';
     resultContainer.style.display = 'none';
 }
 
@@ -168,6 +476,7 @@ function ocultarTodasPantallas() {
     employeesListScreen.style.display = 'none';
     historyScreen.style.display = 'none';
     configScreen.style.display = 'none';
+    userManagementScreen.style.display = 'none';
     resultContainer.style.display = 'none';
     videoContainer.style.display = 'none';
 }
@@ -188,10 +497,13 @@ function configurarBotones() {
     // Login
     doLoginBtn.addEventListener('click', hacerLogin);
     cancelLoginBtn.addEventListener('click', mostrarPantallaPrincipal);
+    if (forgotPasswordBtn) {
+        forgotPasswordBtn.addEventListener('click', mostrarRecuperacion);
+    }
     usernameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') hacerLogin(); });
     passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') hacerLogin(); });
     
-    // Admin
+    // Admin (dinámico según rol)
     registerEmployeeBtn.addEventListener('click', () => {
         currentAction = 'registro';
         ocultarTodasPantallas();
@@ -201,13 +513,27 @@ function configurarBotones() {
         ocultarTodasPantallas();
         mostrarListaEmpleados();
     });
+    if (manageUsersBtn) {
+        manageUsersBtn.addEventListener('click', () => {
+            ocultarTodasPantallas();
+            mostrarGestionUsuarios();
+        });
+    }
     logoutFromAdminBtn.addEventListener('click', () => {
         isLoggedIn = false;
+        currentUser = null;
+        currentUserRole = null;
         mostrarPantallaPrincipal();
     });
     
     // Configuración
-    clearDataBtn.addEventListener('click', limpiarDatos);
+    clearDataBtn.addEventListener('click', () => {
+        if (currentUserRole === 'super_admin') {
+            limpiarDatos();
+        } else {
+            mostrarAlertaError('Solo el Super Usuario puede limpiar todos los datos');
+        }
+    });
     aboutBtn.addEventListener('click', mostrarAcercaDe);
     backFromConfigBtn.addEventListener('click', mostrarPantallaPrincipal);
     
@@ -233,7 +559,45 @@ function configurarBotones() {
     // Historial
     backFromHistoryBtn.addEventListener('click', mostrarPantallaPrincipal);
     
-    // Escaneo - CANCELAR ARREGLADO
+    // Gestión usuarios
+    if (backFromUsersBtn) {
+        backFromUsersBtn.addEventListener('click', () => {
+            ocultarTodasPantallas();
+            mostrarAdminMenu();
+        });
+    }
+    if (createUserBtn) {
+        createUserBtn.addEventListener('click', () => {
+            modalTitle.textContent = 'CREAR NUEVO USUARIO';
+            userIdField.value = '';
+            userForm.reset();
+            userModal.style.display = 'flex';
+        });
+    }
+    
+    // Modal usuario
+    if (userForm) {
+        userForm.addEventListener('submit', crearUsuario);
+    }
+    if (cancelModalBtn) {
+        cancelModalBtn.addEventListener('click', cerrarModalUsuario);
+    }
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', cerrarModalUsuario);
+    }
+    
+    // Modal recuperación
+    if (sendRecoveryBtn) {
+        sendRecoveryBtn.addEventListener('click', recuperarContraseña);
+    }
+    if (cancelRecoveryBtn) {
+        cancelRecoveryBtn.addEventListener('click', cerrarRecuperacion);
+    }
+    if (closeRecoveryModalBtn) {
+        closeRecoveryModalBtn.addEventListener('click', cerrarRecuperacion);
+    }
+    
+    // Escaneo
     if (cancelScanBtn) {
         cancelScanBtn.addEventListener('click', () => {
             detenerEscaneo();
@@ -242,28 +606,37 @@ function configurarBotones() {
 }
 
 function limpiarDatos() {
-    if (confirm('¿Estás seguro de que deseas eliminar TODOS los empleados registrados y el historial de asistencias? Esta acción no se puede deshacer.')) {
+    if (confirm('⚠️ ¿ELIMINAR TODOS LOS DATOS?\n\nSe borrarán:\n• Todos los empleados registrados\n• Todo el historial de asistencias\n• ¡Los usuarios NO se eliminarán!\n\nEsta acción no se puede deshacer.')) {
         registeredEmployees = [];
         attendanceHistory = [];
         guardarEmpleados();
         guardarHistorial();
-        mostrarAlertaExito('✅ Datos eliminados correctamente');
+        mostrarAlertaExito('✅ Datos de empleados y asistencias eliminados correctamente\n(Los usuarios permanecen intactos)');
         mostrarPantallaPrincipal();
     }
 }
 
 function mostrarAcercaDe() {
-    mostrarAlertaInfo('HOSPITAL ERNESTO SEGUNDO PAOLINI\n\nSistema de Control de Asistencia\nVersión 1.0\n\nDesarrollado para RR.HH.\n\nDesarrolado por:\n•T.S.U. Victor Medina\n•T.S.U. Carlos Roa\n•T.S.U. Eduardo Castellano\n•T.S.U. Leonel Marquez ');
+    mostrarAlertaInfo('🏥 HOSPITAL ERNESTO SEGUNDO PAOLINI\n\nSistema de Control de Asistencia\nVersión 2.0 - Con Super Usuario\n\n👑 Super Usuario: superadmin\n🔑 Contraseña: SuperAdmin123\n\nDesarrollado para RR.HH.\n\nDesarrollado por:\n• T.S.U. Victor Medina\n• T.S.U. Carlos Roa\n• T.S.U. Eduardo Castellano\n• T.S.U. Leonel Marquez');
 }
 
 function hacerLogin() {
     const username = usernameInput.value.trim();
     const password = passwordInput.value;
     
-    if (username === VALID_USERNAME && password === VALID_PASSWORD) {
+    const user = systemUsers.find(u => u.username === username && u.password === password);
+    
+    if (user) {
         isLoggedIn = true;
+        currentUser = user;
+        currentUserRole = user.role;
         loginError.style.display = 'none';
+        actualizarMenuSegunRol();
         mostrarAdminMenu();
+        
+        // Mensaje de bienvenida según rol
+        const rolNombre = user.role === 'super_admin' ? 'SUPER USUARIO' : 'ADMINISTRADOR';
+        mostrarAlertaExito(`👋 Bienvenido ${user.name || username}\nRol: ${rolNombre}`);
     } else {
         loginError.style.display = 'block';
         usernameInput.value = '';
@@ -318,7 +691,6 @@ function actualizarTablaHistorial() {
         const fechaFormateada = fecha.toLocaleDateString('es-ES');
         const horaFormateada = fecha.toLocaleTimeString('es-ES');
         
-        // Asignar clase según entrada o salida
         let accionClass = '';
         let accionTexto = '';
         
@@ -338,11 +710,6 @@ function actualizarTablaHistorial() {
         `;
         tableBody.appendChild(row);
     });
-    
-    // Forzar reflow para asegurar que los estilos se apliquen
-    console.log('✅ Tabla actualizada con colores:', 
-        document.querySelectorAll('.accion-entrada').length, 'entradas,',
-        document.querySelectorAll('.accion-salida').length, 'salidas');
 }
 
 function precargarCamara() {
@@ -384,8 +751,8 @@ function crearOverlayEscaneo() {
     const instructions = document.createElement('div');
     instructions.className = 'scanning-instructions';
     instructions.textContent = currentAction === 'registro' ? 
-        'Escanea el QR del empleado para REGISTRARLO' : 
-        'Coloca el código QR dentro del recuadro';
+        '📱 Escanea el QR del empleado para REGISTRARLO' : 
+        '🎯 Coloca el código QR dentro del recuadro';
     
     body.appendChild(overlay);
     body.appendChild(instructions);
@@ -592,7 +959,6 @@ function procesarAsistencia(qrData, nombre, cedula, institucion, tipo) {
     scanResult.innerHTML = `
         <div class="result-card">
             <div class="result-header" style="background: ${colorAccion};">
-                <span class="result-action-icon">${currentAction === 'entrada' ? '' : ''}</span>
                 <span class="result-action-text">${accionTexto}</span>
             </div>
             <div class="result-body">
@@ -711,7 +1077,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
     const btn = document.createElement('button');
     btn.id = 'installButton';
     btn.className = 'btn btn-login-main';
-    btn.textContent = 'INSTALAR APP';
+    btn.textContent = '📲 INSTALAR APP';
     btn.onclick = () => {
         if (deferredPrompt) {
             deferredPrompt.prompt();
