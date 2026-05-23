@@ -651,7 +651,7 @@ body.scanning-active .fullscreen-panel {
     align-items: center;
     justify-content: center;
     z-index: 9999;
-    animation: fadeOutSplash 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: fadeOutSplash 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
     animation-delay: 5s;
 }
 
@@ -701,7 +701,7 @@ body.scanning-active .fullscreen-panel {
     height: 100%;
     background: linear-gradient(90deg, var(--accent), var(--success));
     border-radius: 10px;
-    animation: loading 1.8s ease-out forwards;
+    animation: loading 2s ease-out forwards;
 }
 
 /* Animaciones */
