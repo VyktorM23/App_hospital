@@ -10,11 +10,33 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Asistencia Hospital">
     <link rel="apple-touch-icon" href="icon-192x192.png">
+    
+    <!-- Splash screens para diferentes tamaños de iOS -->
+    <link href="splash-iphone5.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image">
+    <link href="splash-iphone6.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image">
+    <link href="splash-iphoneplus.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)" rel="apple-touch-startup-image">
+    <link href="splash-iphonex.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" rel="apple-touch-startup-image">
+    <link href="splash-ipad.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image">
+    <link href="splash-ipadpro.png" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image">
+    
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
-    <div class="container">
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-content">
+            <img id="splash-logo" src="icons/hospital-logo.png" alt="Hospital Logo" class="splash-image">
+            <div class="splash-loader">
+                <div class="loader-bar"></div>
+            </div>
+            <p class="splash-text">Hospital Ernesto Segundo Paolini</p>
+            <p class="splash-subtext">Sistema de Control de Asistencia</p>
+        </div>
+    </div>
+    
+    <div class="container" id="app-container">
         <!-- Pantalla principal -->
         <div id="main-screen" class="main-screen">
             <div class="hospital-title">
@@ -74,7 +96,7 @@
                         VER EMPLEADOS
                     </button>
                     <button id="manage-users-btn" class="btn admin-btn manage-users-btn">
-                        👑 GESTIONAR USUARIOS
+                        GESTIONAR USUARIOS
                     </button>
                 </div>
                 <button id="logout-from-admin-btn" class="btn btn-logout admin-logout-btn">
@@ -91,8 +113,18 @@
                     LIMPIAR DATOS
                 </button>
                 <button id="about-btn" class="btn config-btn about-btn">
-                    ℹ ACERCA DE
+                    ℹ️ ACERCA DE
                 </button>
+                <div class="config-toggle">
+                    <div class="toggle-label">
+                        <span>Vibración al escanear</span>
+                        <span id="vibration-status" class="toggle-status">Activada</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="vibration-toggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
             </div>
             <button id="back-from-config-btn" class="btn btn-secondary back-btn-full">
                 ← VOLVER
@@ -161,7 +193,7 @@
         
         <!-- Pantalla de GESTIÓN DE USUARIOS (solo Super Usuario) -->
         <div id="user-management-screen" class="fullscreen-panel" style="display: none;">
-            <h2 class="panel-title panel-title-top">👑 GESTIÓN DE USUARIOS</h2>
+            <h2 class="panel-title panel-title-top">GESTIÓN DE USUARIOS</h2>
             <div class="table-container">
                 <table class="users-table">
                     <thead>
@@ -180,7 +212,7 @@
             </div>
             <div class="admin-buttons" style="margin-top: 16px;">
                 <button id="create-user-btn" class="btn admin-btn register-btn" style="background: rgba(14, 165, 233, 0.2);">
-                    ➕ CREAR NUEVO USUARIO
+                    ➕ CREAR NUEVO ADMINISTRADOR
                 </button>
             </div>
             <button id="back-from-users-btn" class="btn btn-secondary back-btn-full">
@@ -192,7 +224,7 @@
         <div id="user-modal" class="modal-overlay" style="display: none;">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3 id="modal-title">CREAR USUARIO</h3>
+                    <h3 id="modal-title">CREAR ADMINISTRADOR</h3>
                     <button id="close-modal-btn" class="modal-close">&times;</button>
                 </div>
                 <form id="user-form">
@@ -204,41 +236,124 @@
                         <input type="text" id="user-name" class="login-input" placeholder="Nombre completo">
                     </div>
                     <div class="input-group">
-                        <input type="password" id="user-password" class="login-input" placeholder="Contraseña *">
+                        <input type="password" id="user-password" class="login-input" placeholder="Contraseña *" required>
                     </div>
                     <div class="input-group">
                         <select id="user-role" class="login-input">
-                            <option value="admin">👤 Administrador</option>
-                            <option value="super_admin">👑 Super Usuario</option>
+                            <option value="admin">Administrador</option>
                         </select>
+                        <small style="display: block; margin-top: 8px; color: #94a3b8; font-size: 12px;">
+                            * Solo el Super Usuario puede crear administradores
+                        </small>
+                    </div>
+                    <div class="input-group" id="security-question-group">
+                        <select id="user-security-question" class="login-input">
+                            <option value="¿Cuál es el nombre de tu primera mascota?">¿Cuál es el nombre de tu primera mascota?</option>
+                            <option value="¿En qué ciudad naciste?">¿En qué ciudad naciste?</option>
+                            <option value="¿Cuál es el nombre de tu madre?">¿Cuál es el nombre de tu madre?</option>
+                            <option value="¿Cuál es tu comida favorita?">¿Cuál es tu comida favorita?</option>
+                            <option value="¿Cuál es el nombre de tu mejor amigo?">¿Cuál es el nombre de tu mejor amigo?</option>
+                            <option value="¿Cuál era tu materia favorita en la escuela?">¿Cuál era tu materia favorita en la escuela?</option>
+                            <option value="¿En qué año te graduaste?">¿En qué año te graduaste?</option>
+                            <option value="¿Cuál es el modelo de tu primer carro?">¿Cuál es el modelo de tu primer carro?</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="user-security-answer" class="login-input" placeholder="Respuesta de seguridad *" required>
                     </div>
                     <div class="modal-buttons">
                         <button type="submit" class="btn btn-login">GUARDAR</button>
-                        <button type="button" id="cancel-modal-btn" class="btn btn-secondary">CANCELAR</button>
+                        <button type="button" id="cancel-modal-btn" class="btn btn-secondary-cancel">CANCELAR</button>
                     </div>
                 </form>
             </div>
         </div>
         
-        <!-- Modal de RECUPERACIÓN DE CONTRASEÑA -->
+        <!-- Modal de RECUPERACIÓN DE CONTRASEÑA con pregunta de seguridad -->
         <div id="recovery-modal" class="modal-overlay" style="display: none;">
-            <div class="modal-content">
+            <div class="modal-content" style="max-width: 450px;">
                 <div class="modal-header">
-                    <h3>🔐 RECUPERAR CONTRASEÑA</h3>
+                    <h3>RECUPERAR CONTRASEÑA</h3>
                     <button id="close-recovery-modal-btn" class="modal-close">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p style="margin-bottom: 16px; color: #94a3b8;">Ingrese su nombre de usuario para recuperar su contraseña</p>
-                    <div class="input-group">
-                        <input type="text" id="recovery-username" class="login-input" placeholder="Nombre de usuario">
+                    <!-- Paso 1: Ingresar usuario -->
+                    <div id="recovery-step1">
+                        <p style="margin-bottom: 16px; color: #94a3b8;">Ingrese su nombre de usuario para comenzar la recuperación</p>
+                        <div class="input-group">
+                            <input type="text" id="recovery-username" class="login-input" placeholder="Nombre de usuario">
+                        </div>
+                        <div id="recovery-message" style="margin: 16px 0;"></div>
+                        <div class="modal-buttons">
+                            <button id="verify-user-btn" class="btn btn-login">VERIFICAR USUARIO</button>
+                            <button id="cancel-recovery-btn" class="btn btn-secondary">CANCELAR</button>
+                        </div>
                     </div>
-                    <div id="recovery-message" style="margin: 16px 0;"></div>
-                    <div class="modal-buttons">
-                        <button id="send-recovery-btn" class="btn btn-login">RECUPERAR</button>
-                        <button id="cancel-recovery-btn" class="btn btn-secondary">CANCELAR</button>
+                    
+                    <!-- Paso 2: Pregunta de seguridad -->
+                    <div id="recovery-step2" style="display: none;">
+                        <p style="margin-bottom: 16px; color: #94a3b8;">Responda la siguiente pregunta de seguridad:</p>
+                        <div class="input-group">
+                            <div class="security-question-box" style="background: rgba(14, 165, 233, 0.1); padding: 16px; border-radius: 12px; margin-bottom: 16px; text-align: center;">
+                                <span style="font-size: 14px; color: #94a3b8;">PREGUNTA DE SEGURIDAD</span>
+                                <p id="recovery-question-text" style="font-size: 18px; font-weight: 600; margin-top: 8px; color: #0ea5e9;"></p>
+                            </div>
+                            <input type="text" id="recovery-answer" class="login-input" placeholder="Su respuesta">
+                        </div>
+                        <div class="modal-buttons">
+                            <button id="verify-answer-btn" class="btn btn-login">VERIFICAR RESPUESTA</button>
+                            <button id="back-to-step1-btn" class="btn btn-secondary">← VOLVER</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Paso 3: Mostrar contraseña -->
+                    <div id="recovery-step3" style="display: none;">
+                        <p style="margin-bottom: 16px; color: #94a3b8; text-align: center;">¡Verificación exitosa!</p>
+                        <div id="recovered-password"></div>
+                        <div class="modal-buttons" style="margin-top: 20px;">
+                            <button id="close-recovery-final-btn" class="btn btn-login">IR AL LOGIN</button>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- Pantalla de MARCAR POR CÉDULA - Versión con teclado nativo -->
+        <div id="cedula-screen" class="fullscreen-panel" style="display: none;">
+            <h2 class="panel-title">MARCAR ASISTENCIA</h2>
+            <div class="cedula-container">
+                <div class="cedula-display">
+                    <input type="tel" 
+                           id="cedula-input" 
+                           class="cedula-input-field" 
+                           placeholder="Ingrese cédula"
+                           inputmode="numeric"
+                           pattern="[0-9]*"
+                           maxlength="15"
+                           autocomplete="off">
+                </div>
+                
+                <div class="cedula-actions">
+                    <button id="cedula-verify-btn" class="btn btn-login">VERIFICAR</button>
+                    <button id="cedula-cancel-btn" class="btn btn-secondary-cancel">CANCELAR</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="cedula-action-screen" class="fullscreen-panel" style="display: none;">
+            <h2 class="panel-title">SELECCIONE ACCIÓN</h2>
+            <div id="cedula-employee-info" class="employee-info-card"></div>
+            <div class="action-buttons">
+                <button id="cedula-entry-btn" class="btn action-btn entry-btn">
+                    ✅ ENTRADA
+                </button>
+                <button id="cedula-exit-btn" class="btn action-btn exit-btn">
+                    ❌ SALIDA
+                </button>
+            </div>
+            <button id="cedula-back-btn" class="btn btn-secondary back-btn-full">
+                ← VOLVER
+            </button>
         </div>
         
         <!-- Video para escaneo -->

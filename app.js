@@ -6,36 +6,36 @@ let scanTimeout = null;
 const SCAN_INTERVAL = 200;
 
 // Estado de la aplicación
-let currentAction = null; // 'entrada', 'salida', o 'registro'
+let currentAction = null;
 let attendanceHistory = [];
 let registeredEmployees = [];
 let isLoggedIn = false;
 let currentUser = null;
 let currentUserRole = null;
 
-// Estructura de usuarios (SOLO EL SUPER USUARIO PUEDE MODIFICAR)
+let currentCedulaEmployee = null;
+let currentCedula = '';
+
+let vibrationEnabled = true;  // Activado por defecto
+const VIBRATION_DURATION = 200;  // 200 milisegundos
+
+// ========== ESTRUCTURA DE USUARIOS - SOLO SUPER USUARIO ==========
 let systemUsers = [
     {
-        id: "user_001",
+        id: "user_super_001",
         username: "superadmin",
         password: "1234",
         role: "super_admin",
         name: "Super Administrador",
-        createdAt: new Date().toISOString()
-    },
-    {
-        id: "user_002", 
-        username: "admin",
-        password: "1234",
-        role: "admin",
-        name: "Administrador Principal",
+        securityQuestion: "¿Cuál es el nombre de la mascota de la abuela?",
+        securityAnswer: "firulais",
         createdAt: new Date().toISOString()
     }
 ];
 
-// Credenciales por defecto (solo para verificación inicial)
-const SUPER_USERNAME = "superadmin";
-const SUPER_PASSWORD = "SuperAdmin123";
+// Variables para recuperación
+let recoveryStep = 1;
+let currentRecoveryUser = null;
 
 // Elementos del DOM
 const mainScreen = document.getElementById('main-screen');
@@ -66,7 +66,7 @@ const passwordInput = document.getElementById('password');
 const loginError = document.getElementById('login-error');
 const forgotPasswordBtn = document.getElementById('forgot-password-btn');
 
-// Botones admin (ahora dinámicos según rol)
+// Botones admin
 const registerEmployeeBtn = document.getElementById('register-employee-btn');
 const viewEmployeesBtn = document.getElementById('view-employees-btn');
 const manageUsersBtn = document.getElementById('manage-users-btn');
@@ -86,13 +86,16 @@ const userUsername = document.getElementById('user-username');
 const userPassword = document.getElementById('user-password');
 const userRole = document.getElementById('user-role');
 const userName = document.getElementById('user-name');
+const userSecurityQuestion = document.getElementById('user-security-question');
+const userSecurityAnswer = document.getElementById('user-security-answer');
 const cancelModalBtn = document.getElementById('cancel-modal-btn');
 const closeModalBtn = document.getElementById('close-modal-btn');
 
-// Modal recuperación de contraseña
+// Modal recuperación
 const recoveryModal = document.getElementById('recovery-modal');
 const recoveryUsername = document.getElementById('recovery-username');
 const recoveryMessage = document.getElementById('recovery-message');
+const recoveryAnswer = document.getElementById('recovery-answer');
 const sendRecoveryBtn = document.getElementById('send-recovery-btn');
 const cancelRecoveryBtn = document.getElementById('cancel-recovery-btn');
 const closeRecoveryModalBtn = document.getElementById('close-recovery-modal-btn');
@@ -116,8 +119,29 @@ const backFromHistoryBtn = document.getElementById('back-from-history-btn');
 // Botones escaneo
 const cancelScanBtn = document.getElementById('cancel-scan-btn');
 
+//cedula
+const cedulaScreen = document.getElementById('cedula-screen');
+const cedulaActionScreen = document.getElementById('cedula-action-screen');
+const cedulaInput = document.getElementById('cedula-input');
+const cedulaVerifyBtn = document.getElementById('cedula-verify-btn');
+const cedulaCancelBtn = document.getElementById('cedula-cancel-btn');
+const cedulaEntryBtn = document.getElementById('cedula-entry-btn');
+const cedulaExitBtn = document.getElementById('cedula-exit-btn');
+const cedulaBackBtn = document.getElementById('cedula-back-btn');
+const cedulaEmployeeInfo = document.getElementById('cedula-employee-info');
+
 const body = document.body;
 let cameraPermissionGranted = false;
+
+// ========== SPLASH SCREEN ==========
+function ocultarSplash() {
+    const splash = document.getElementById('splash-screen');
+    if (splash) {
+        setTimeout(() => {
+            splash.style.display = 'none';
+        }, 2600);
+    }
+}
 
 // Inicializar
 document.addEventListener('DOMContentLoaded', () => {
@@ -126,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     configurarBotones();
     registrarServiceWorker();
     actualizarMenuSegunRol();
+    cargarConfiguracion();
     
     if (typeof jsQR !== 'undefined') {
         console.log('✅ jsQR listo');
@@ -133,6 +158,44 @@ document.addEventListener('DOMContentLoaded', () => {
     
     precargarCamara();
 });
+
+// Ocultar splash cuando la página esté completamente cargada
+window.addEventListener('load', () => {
+    ocultarSplash();
+});
+
+// También ocultar si el DOM está listo antes
+setTimeout(() => {
+    const splash = document.getElementById('splash-screen');
+    if (splash && splash.style.display !== 'none') {
+        splash.style.display = 'none';
+    }
+}, 3500);
+
+function vibrar() {
+    if (vibrationEnabled && window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate(VIBRATION_DURATION);
+        console.log('📳 Vibración ejecutada');
+    }
+}
+
+function vibrarDoble() {
+    if (vibrationEnabled && window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate([VIBRATION_DURATION, 100, VIBRATION_DURATION]);
+        console.log('📳 Vibración doble ejecutada');
+    }
+}
+
+function vibrarError() {
+    if (vibrationEnabled && window.navigator && window.navigator.vibrate) {
+        window.navigator.vibrate([500, 200, 500]);
+    }
+}
+
+function normalizarCedula(cedula) {
+    if (!cedula) return '';
+    return cedula.toString().replace(/[^0-9]/g, '');
+}
 
 function cargarTodosLosDatos() {
     // Cargar historial
@@ -155,18 +218,15 @@ function cargarTodosLosDatos() {
         }
     }
     
-    // Cargar usuarios del sistema (CRÍTICO: asegurar que siempre exista superadmin)
+    // Cargar usuarios del sistema
     const usuariosGuardados = localStorage.getItem('systemUsers');
     if (usuariosGuardados) {
         try {
             const parsedUsers = JSON.parse(usuariosGuardados);
-            // Verificar que superadmin existe
             const hasSuperAdmin = parsedUsers.some(u => u.username === 'superadmin');
-            if (hasSuperAdmin) {
+            if (hasSuperAdmin && parsedUsers.length > 0) {
                 systemUsers = parsedUsers;
             } else {
-                // Si no existe superadmin, restaurar el original
-                console.warn('Superadmin no encontrado, restaurando...');
                 saveUsers();
             }
         } catch (e) {
@@ -243,31 +303,40 @@ function actualizarTablaUsuarios() {
     usersTableBody.innerHTML = '';
     
     if (systemUsers.length === 0) {
-        usersTableBody.innerHTML = '<tr><td colspan="5" class="no-data">No hay usuarios registrados</td></tr>';
+        usersTableBody.innerHTML = '<tr><td colspan="5" class="no-data">No hay usuarios registrados</td><tr>';
         return;
     }
     
-    systemUsers.forEach(usuario => {
+    const superAdmin = systemUsers.find(u => u.role === 'super_admin');
+    const admins = systemUsers.filter(u => u.role === 'admin');
+    
+    if (superAdmin) {
         const row = document.createElement('tr');
-        const rolTexto = usuario.role === 'super_admin' ? '👑 SUPER ADMIN' : '👤 ADMINISTRADOR';
-        const rolClass = usuario.role === 'super_admin' ? 'role-superadmin' : 'role-admin';
-        
+        row.innerHTML = `
+            <td><strong>${superAdmin.username}</strong></td>
+            <td>${superAdmin.name || 'Sin nombre'}</td>
+            <td class="role-superadmin">SUPER ADMIN</td>
+            <td>${new Date(superAdmin.createdAt).toLocaleDateString()}</td>
+            <td><span style="opacity:0.5;">Protegido</span></td>
+        `;
+        usersTableBody.appendChild(row);
+    }
+    
+    admins.forEach(usuario => {
+        const row = document.createElement('tr');
         row.innerHTML = `
             <td>${usuario.username}</td>
             <td>${usuario.name || 'Sin nombre'}</td>
-            <td class="${rolClass}">${rolTexto}</td>
+            <td class="role-admin">ADMINISTRADOR</td>
             <td>${new Date(usuario.createdAt).toLocaleDateString()}</td>
             <td class="user-actions">
-                ${usuario.username !== 'superadmin' ? `
-                    <button class="btn-icon btn-edit-user" data-id="${usuario.id}">✏️</button>
-                    <button class="btn-icon btn-delete-user" data-id="${usuario.id}">🗑️</button>
-                ` : '<span style="opacity:0.5;">🔒</span>'}
+                <button class="btn-icon btn-edit-user" data-id="${usuario.id}">Editar</button>
+                <button class="btn-icon btn-delete-user" data-id="${usuario.id}">Eliminar</button>
             </td>
         `;
         usersTableBody.appendChild(row);
     });
     
-    // Agregar event listeners a los botones de editar/eliminar
     document.querySelectorAll('.btn-edit-user').forEach(btn => {
         btn.addEventListener('click', () => editarUsuario(btn.dataset.id));
     });
@@ -277,6 +346,20 @@ function actualizarTablaUsuarios() {
     });
 }
 
+function mostrarModalCrearUsuario() {
+    modalTitle.textContent = '➕ CREAR NUEVO ADMINISTRADOR';
+    userIdField.value = '';
+    userForm.reset();
+    userUsername.value = '';
+    userPassword.value = '';
+    userName.value = '';
+    if (userSecurityQuestion) {
+        userSecurityQuestion.value = document.querySelector('#user-security-question option:first-child')?.value || '';
+    }
+    if (userSecurityAnswer) userSecurityAnswer.value = '';
+    userModal.style.display = 'flex';
+}
+
 function editarUsuario(userId) {
     const usuario = systemUsers.find(u => u.id === userId);
     if (!usuario || usuario.username === 'superadmin') {
@@ -284,12 +367,14 @@ function editarUsuario(userId) {
         return;
     }
     
-    modalTitle.textContent = 'EDITAR USUARIO';
+    modalTitle.textContent = 'EDITAR ADMINISTRADOR';
     userIdField.value = usuario.id;
     userUsername.value = usuario.username;
-    userPassword.value = ''; // Dejar vacío para mantener la misma
+    userPassword.value = '';
     userRole.value = usuario.role;
     userName.value = usuario.name || '';
+    if (userSecurityQuestion) userSecurityQuestion.value = usuario.securityQuestion || '';
+    if (userSecurityAnswer) userSecurityAnswer.value = '';
     
     userModal.style.display = 'flex';
 }
@@ -301,11 +386,11 @@ function eliminarUsuario(userId) {
         return;
     }
     
-    if (confirm(`¿Eliminar al usuario "${usuario.username}"?`)) {
+    if (confirm(`¿Eliminar al administrador "${usuario.username}"?`)) {
         systemUsers = systemUsers.filter(u => u.id !== userId);
         saveUsers();
         actualizarTablaUsuarios();
-        mostrarAlertaExito(`✅ Usuario "${usuario.username}" eliminado`);
+        mostrarAlertaExito(`✅ Administrador "${usuario.username}" eliminado`);
     }
 }
 
@@ -314,16 +399,22 @@ function crearUsuario(event) {
     
     const username = userUsername.value.trim();
     const password = userPassword.value;
-    const role = userRole.value;
+    const role = userRole?.value || 'admin';
     const name = userName.value.trim();
+    const securityQuestion = userSecurityQuestion?.value || '';
+    const securityAnswer = userSecurityAnswer?.value.trim().toLowerCase() || '';
     const userId = userIdField.value;
     
-    if (!username || (!password && !userId)) {
-        mostrarAlertaError('Complete todos los campos requeridos');
+    if (!username || !password) {
+        mostrarAlertaError('Complete todos los campos requeridos (*)');
         return;
     }
     
-    // Verificar si el username ya existe (excepto en edición)
+    if (!userId && (!securityQuestion || !securityAnswer)) {
+        mostrarAlertaError('La pregunta y respuesta de seguridad son obligatorias');
+        return;
+    }
+    
     const existingUser = systemUsers.find(u => u.username === username && u.id !== userId);
     if (existingUser) {
         mostrarAlertaError('El nombre de usuario ya existe');
@@ -331,29 +422,33 @@ function crearUsuario(event) {
     }
     
     if (userId) {
-        // Editar usuario existente
         const userIndex = systemUsers.findIndex(u => u.id === userId);
         if (userIndex !== -1) {
             systemUsers[userIndex].username = username;
             if (password) systemUsers[userIndex].password = password;
             systemUsers[userIndex].role = role;
             systemUsers[userIndex].name = name;
+            if (securityQuestion && securityAnswer) {
+                systemUsers[userIndex].securityQuestion = securityQuestion;
+                systemUsers[userIndex].securityAnswer = securityAnswer;
+            }
             saveUsers();
-            mostrarAlertaExito(`✅ Usuario "${username}" actualizado`);
+            mostrarAlertaExito(`Administrador "${username}" actualizado`);
         }
     } else {
-        // Crear nuevo usuario
         const newUser = {
             id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6),
             username: username,
             password: password,
-            role: role,
+            role: 'admin',
             name: name,
+            securityQuestion: securityQuestion,
+            securityAnswer: securityAnswer.toLowerCase(),
             createdAt: new Date().toISOString()
         };
         systemUsers.push(newUser);
         saveUsers();
-        mostrarAlertaExito(`✅ Usuario "${username}" creado exitosamente`);
+        mostrarAlertaExito(`Administrador "${username}" creado exitosamente`);
     }
     
     cerrarModalUsuario();
@@ -366,68 +461,122 @@ function cerrarModalUsuario() {
     userIdField.value = '';
 }
 
-// FUNCIÓN DE RECUPERACIÓN DE CONTRASEÑA
 function mostrarRecuperacion() {
+    recoveryStep = 1;
+    currentRecoveryUser = null;
     recoveryModal.style.display = 'flex';
-    recoveryUsername.value = '';
-    recoveryMessage.innerHTML = '';
+    if (recoveryUsername) recoveryUsername.value = '';
+    if (recoveryAnswer) recoveryAnswer.value = '';
+    if (recoveryMessage) recoveryMessage.innerHTML = '';
+    
+    const step1 = document.getElementById('recovery-step1');
+    const step2 = document.getElementById('recovery-step2');
+    const step3 = document.getElementById('recovery-step3');
+    
+    if (step1) step1.style.display = 'block';
+    if (step2) step2.style.display = 'none';
+    if (step3) step3.style.display = 'none';
 }
 
-function recuperarContraseña() {
+function verificarUsuario() {
     const username = recoveryUsername.value.trim();
     
     if (!username) {
-        recoveryMessage.innerHTML = '<span style="color: #ef4444;">❌ Ingrese un nombre de usuario</span>';
+        if (recoveryMessage) recoveryMessage.innerHTML = '<span style="color: #ef4444;">❌ Ingrese un nombre de usuario</span>';
         return;
     }
     
     const user = systemUsers.find(u => u.username === username);
     
     if (!user) {
-        recoveryMessage.innerHTML = '<span style="color: #ef4444;">❌ Usuario no encontrado</span>';
+        if (recoveryMessage) recoveryMessage.innerHTML = '<span style="color: #ef4444;">❌ Usuario no encontrado</span>';
         return;
     }
     
-    if (user.role === 'super_admin') {
-        recoveryMessage.innerHTML = `
-            <div style="background: rgba(14, 165, 233, 0.2); padding: 12px; border-radius: 12px;">
-                <strong style="color: #0ea5e9;">👑 SUPER USUARIO</strong><br>
-                Contraseña: <strong style="color: #10b981;">${user.password}</strong><br>
-                <small style="color: #94a3b8;">Guarde esta información en un lugar seguro</small>
-            </div>
-        `;
+    currentRecoveryUser = user;
+    recoveryStep = 2;
+    
+    if (recoveryMessage) recoveryMessage.innerHTML = '';
+    
+    const step1 = document.getElementById('recovery-step1');
+    const step2 = document.getElementById('recovery-step2');
+    const questionText = document.getElementById('recovery-question-text');
+    
+    if (step1) step1.style.display = 'none';
+    if (step2) step2.style.display = 'block';
+    if (questionText) questionText.textContent = user.securityQuestion || '¿Cuál es tu color favorito?';
+    if (recoveryAnswer) recoveryAnswer.value = '';
+}
+
+function verificarRespuesta() {
+    const answer = recoveryAnswer?.value.trim().toLowerCase() || '';
+    
+    if (!answer) {
+        mostrarAlertaError('Por favor responda la pregunta de seguridad');
+        return;
+    }
+    
+    if (answer === currentRecoveryUser.securityAnswer) {
+        recoveryStep = 3;
+        
+        const step2 = document.getElementById('recovery-step2');
+        const step3 = document.getElementById('recovery-step3');
+        
+        if (step2) step2.style.display = 'none';
+        if (step3) step3.style.display = 'block';
+        
+        const recoveredPasswordDiv = document.getElementById('recovered-password');
+        const userRole = currentRecoveryUser.role === 'super_admin' ? 'SUPER USUARIO' : 'ADMINISTRADOR';
+        
+        if (recoveredPasswordDiv) {
+            recoveredPasswordDiv.innerHTML = `
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(14, 165, 233, 0.2)); 
+                            padding: 20px; 
+                            border-radius: 16px; 
+                            margin: 16px 0;
+                            border: 1px solid rgba(16, 185, 129, 0.3);">
+                    <div style="font-size: 14px; color: #94a3b8; margin-bottom: 8px;">ROL</div>
+                    <div style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #fbbf24;">${userRole}</div>
+                    
+                    <div style="font-size: 14px; color: #94a3b8; margin-bottom: 8px;">NOMBRE DE USUARIO</div>
+                    <div style="font-size: 18px; font-weight: 700; margin-bottom: 16px;">${currentRecoveryUser.username}</div>
+                    
+                    <div style="font-size: 14px; color: #94a3b8; margin-bottom: 8px;">CONTRASEÑA</div>
+                    <div style="font-size: 24px; font-weight: 900; color: #10b981; letter-spacing: 2px; word-break: break-all;">${currentRecoveryUser.password}</div>
+                    
+                    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 12px; color: #f59e0b;">
+                        ⚠️ Recomendamos cambiar esta contraseña después de iniciar sesión
+                    </div>
+                </div>
+            `;
+        }
     } else {
-        recoveryMessage.innerHTML = `
-            <div style="background: rgba(16, 185, 129, 0.2); padding: 12px; border-radius: 12px;">
-                <strong>✅ Credenciales encontradas</strong><br>
-                Usuario: <strong>${user.username}</strong><br>
-                Contraseña: <strong style="color: #10b981;">${user.password}</strong><br>
-                <small style="color: #94a3b8;">Recomendamos cambiar esta contraseña después de iniciar sesión</small>
-            </div>
-        `;
+        mostrarAlertaError('Respuesta incorrecta. No se puede recuperar la contraseña.');
+        cerrarRecuperacion();
     }
 }
 
 function cerrarRecuperacion() {
-    recoveryModal.style.display = 'none';
-    recoveryMessage.innerHTML = '';
+    if (recoveryModal) recoveryModal.style.display = 'none';
+    recoveryStep = 1;
+    currentRecoveryUser = null;
+    if (recoveryUsername) recoveryUsername.value = '';
+    if (recoveryAnswer) recoveryAnswer.value = '';
+    if (recoveryMessage) recoveryMessage.innerHTML = '';
 }
 
 function actualizarMenuSegunRol() {
-    // Mostrar u ocultar botón de gestión de usuarios según rol
     if (manageUsersBtn) {
         manageUsersBtn.style.display = currentUserRole === 'super_admin' ? 'flex' : 'none';
     }
     
-    // En el menú de configuración, mostrar opciones adicionales para super_admin
-    const configButtons = document.querySelector('.config-buttons');
-    if (configButtons && currentUserRole === 'super_admin') {
-        // Verificar si ya existe el botón de respaldo
-        if (!document.getElementById('backup-data-btn')) {
+    if (currentUserRole === 'super_admin') {
+        const configButtons = document.querySelector('.config-buttons');
+        if (configButtons && !document.getElementById('backup-data-btn')) {
             const backupBtn = document.createElement('button');
             backupBtn.id = 'backup-data-btn';
             backupBtn.className = 'btn config-btn backup-btn';
-            backupBtn.textContent = '💾 RESPALDAR DATOS';
+            backupBtn.textContent = 'RESPALDAR DATOS';
             backupBtn.onclick = respaldarDatos;
             configButtons.appendChild(backupBtn);
         }
@@ -453,7 +602,7 @@ function respaldarDatos() {
     linkElement.setAttribute('download', exportFileDefaultName);
     linkElement.click();
     
-    mostrarAlertaExito('✅ Respaldo generado exitosamente');
+    mostrarAlertaExito('Respaldo generado exitosamente');
 }
 
 function mostrarConfiguracion() {
@@ -482,7 +631,6 @@ function ocultarTodasPantallas() {
 }
 
 function configurarBotones() {
-    // Botones principales
     loginButton.addEventListener('click', mostrarLogin);
     scanButton.addEventListener('click', () => {
         ocultarTodasPantallas();
@@ -494,7 +642,6 @@ function configurarBotones() {
     });
     configButton.addEventListener('click', mostrarConfiguracion);
     
-    // Login
     doLoginBtn.addEventListener('click', hacerLogin);
     cancelLoginBtn.addEventListener('click', mostrarPantallaPrincipal);
     if (forgotPasswordBtn) {
@@ -503,7 +650,6 @@ function configurarBotones() {
     usernameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') hacerLogin(); });
     passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') hacerLogin(); });
     
-    // Admin (dinámico según rol)
     registerEmployeeBtn.addEventListener('click', () => {
         currentAction = 'registro';
         ocultarTodasPantallas();
@@ -526,7 +672,6 @@ function configurarBotones() {
         mostrarPantallaPrincipal();
     });
     
-    // Configuración
     clearDataBtn.addEventListener('click', () => {
         if (currentUserRole === 'super_admin') {
             limpiarDatos();
@@ -537,7 +682,6 @@ function configurarBotones() {
     aboutBtn.addEventListener('click', mostrarAcercaDe);
     backFromConfigBtn.addEventListener('click', mostrarPantallaPrincipal);
     
-    // Acción (Entrada/Salida)
     entryBtn.addEventListener('click', () => {
         currentAction = 'entrada';
         ocultarTodasPantallas();
@@ -550,16 +694,13 @@ function configurarBotones() {
     });
     backFromActionBtn.addEventListener('click', mostrarPantallaPrincipal);
     
-    // Lista empleados
     backFromEmployeesListBtn.addEventListener('click', () => {
         ocultarTodasPantallas();
         mostrarAdminMenu();
     });
     
-    // Historial
     backFromHistoryBtn.addEventListener('click', mostrarPantallaPrincipal);
     
-    // Gestión usuarios
     if (backFromUsersBtn) {
         backFromUsersBtn.addEventListener('click', () => {
             ocultarTodasPantallas();
@@ -567,15 +708,9 @@ function configurarBotones() {
         });
     }
     if (createUserBtn) {
-        createUserBtn.addEventListener('click', () => {
-            modalTitle.textContent = 'CREAR NUEVO USUARIO';
-            userIdField.value = '';
-            userForm.reset();
-            userModal.style.display = 'flex';
-        });
+        createUserBtn.addEventListener('click', mostrarModalCrearUsuario);
     }
     
-    // Modal usuario
     if (userForm) {
         userForm.addEventListener('submit', crearUsuario);
     }
@@ -586,9 +721,28 @@ function configurarBotones() {
         closeModalBtn.addEventListener('click', cerrarModalUsuario);
     }
     
-    // Modal recuperación
+    if (document.getElementById('verify-user-btn')) {
+        document.getElementById('verify-user-btn').addEventListener('click', verificarUsuario);
+    }
+    if (document.getElementById('verify-answer-btn')) {
+        document.getElementById('verify-answer-btn').addEventListener('click', verificarRespuesta);
+    }
+    if (document.getElementById('back-to-step1-btn')) {
+        document.getElementById('back-to-step1-btn').addEventListener('click', () => {
+            const step1 = document.getElementById('recovery-step1');
+            const step2 = document.getElementById('recovery-step2');
+            if (step1) step1.style.display = 'block';
+            if (step2) step2.style.display = 'none';
+            if (recoveryMessage) recoveryMessage.innerHTML = '';
+            if (recoveryAnswer) recoveryAnswer.value = '';
+        });
+    }
+    if (document.getElementById('close-recovery-final-btn')) {
+        document.getElementById('close-recovery-final-btn').addEventListener('click', cerrarRecuperacion);
+    }
+    
     if (sendRecoveryBtn) {
-        sendRecoveryBtn.addEventListener('click', recuperarContraseña);
+        sendRecoveryBtn.addEventListener('click', verificarUsuario);
     }
     if (cancelRecoveryBtn) {
         cancelRecoveryBtn.addEventListener('click', cerrarRecuperacion);
@@ -597,27 +751,72 @@ function configurarBotones() {
         closeRecoveryModalBtn.addEventListener('click', cerrarRecuperacion);
     }
     
-    // Escaneo
     if (cancelScanBtn) {
         cancelScanBtn.addEventListener('click', () => {
             detenerEscaneo();
         });
     }
+
+    // ========== BOTÓN MARCAR POR CÉDULA ==========
+    const centerButtons = document.querySelector('.center-buttons');
+    if (centerButtons && !document.getElementById('cedulaMainBtn')) {
+        const cedulaMainBtn = document.createElement('button');
+        cedulaMainBtn.id = 'cedulaMainBtn';
+        cedulaMainBtn.className = 'btn btn-scan-main';
+        cedulaMainBtn.textContent = 'MARCAR POR CÉDULA';
+        cedulaMainBtn.onclick = () => mostrarCedulaScreen();
+        centerButtons.appendChild(cedulaMainBtn);
+    }
+
+    // Eventos del input de cédula (teclado nativo)
+    if (cedulaInput) {
+        // Validar que solo se ingresen números
+        cedulaInput.addEventListener('input', (e) => {
+            let value = e.target.value;
+            // Filtrar solo números
+            value = value.replace(/[^0-9]/g, '');
+            // Limitar a 15 dígitos
+            if (value.length > 15) {
+                value = value.slice(0, 15);
+            }
+            cedulaInput.value = value;
+            currentCedula = value;
+        });
+        
+        // Prevenir caracteres no numéricos en tiempo real
+        cedulaInput.addEventListener('keypress', (e) => {
+            const charCode = e.which ? e.which : e.keyCode;
+            // Permitir solo números (códigos 48-57) y teclas de control
+            if (charCode > 31 && (charCode < 48 || charCode > 57)) {
+                e.preventDefault();
+            }
+        });
+    }
+
+    // Botones de la pantalla cédula
+    if (cedulaVerifyBtn) cedulaVerifyBtn.addEventListener('click', verificarCedula);
+    if (cedulaCancelBtn) cedulaCancelBtn.addEventListener('click', cerrarCedulaScreen);
+    if (cedulaBackBtn) cedulaBackBtn.addEventListener('click', () => {
+        cedulaActionScreen.style.display = 'none';
+        mostrarCedulaScreen();
+    });
+    if (cedulaEntryBtn) cedulaEntryBtn.addEventListener('click', () => marcarAsistenciaPorCedula('entrada'));
+    if (cedulaExitBtn) cedulaExitBtn.addEventListener('click', () => marcarAsistenciaPorCedula('salida'));
 }
 
 function limpiarDatos() {
-    if (confirm('⚠️ ¿ELIMINAR TODOS LOS DATOS?\n\nSe borrarán:\n• Todos los empleados registrados\n• Todo el historial de asistencias\n• ¡Los usuarios NO se eliminarán!\n\nEsta acción no se puede deshacer.')) {
+    if (confirm('¿ELIMINAR TODOS LOS DATOS?\n\nSe borrarán:\n• Todos los empleados registrados\n• Todo el historial de asistencias\n• ¡Los usuarios NO se eliminarán!\n\nEsta acción no se puede deshacer.')) {
         registeredEmployees = [];
         attendanceHistory = [];
         guardarEmpleados();
         guardarHistorial();
-        mostrarAlertaExito('✅ Datos de empleados y asistencias eliminados correctamente\n(Los usuarios permanecen intactos)');
+        mostrarAlertaExito('Datos de empleados y asistencias eliminados correctamente\n(Los usuarios permanecen intactos)');
         mostrarPantallaPrincipal();
     }
 }
 
 function mostrarAcercaDe() {
-    mostrarAlertaInfo('🏥 HOSPITAL ERNESTO SEGUNDO PAOLINI\n\nSistema de Control de Asistencia\nVersión 2.0 - Con Super Usuario\n\n👑 Super Usuario: superadmin\n🔑 Contraseña: SuperAdmin123\n\nDesarrollado para RR.HH.\n\nDesarrollado por:\n• T.S.U. Victor Medina\n• T.S.U. Carlos Roa\n• T.S.U. Eduardo Castellano\n• T.S.U. Leonel Marquez');
+    mostrarAlertaInfo('HOSPITAL ERNESTO SEGUNDO PAOLINI\n\nSistema de Control de Asistencia\nVersión 2.0\nDesarrollado para RR.HH.\n\nDesarrollado por:\n• T.S.U. Victor Medina\n• T.S.U. Carlos Roa\n• T.S.U. Eduardo Castellano\n• T.S.U. Leonel Marquez');
 }
 
 function hacerLogin() {
@@ -633,10 +832,6 @@ function hacerLogin() {
         loginError.style.display = 'none';
         actualizarMenuSegunRol();
         mostrarAdminMenu();
-        
-        // Mensaje de bienvenida según rol
-        const rolNombre = user.role === 'super_admin' ? 'SUPER USUARIO' : 'ADMINISTRADOR';
-        mostrarAlertaExito(`👋 Bienvenido ${user.name || username}\nRol: ${rolNombre}`);
     } else {
         loginError.style.display = 'block';
         usernameInput.value = '';
@@ -720,7 +915,7 @@ function precargarCamara() {
         .then(stream => {
             cameraPermissionGranted = true;
             stream.getTracks().forEach(track => track.stop());
-            console.log('✅ Permiso de cámara pre-obtenido');
+            console.log('Permiso de cámara pre-obtenido');
         })
         .catch(err => console.log('No se pudo pre-obtener permiso:', err));
     }
@@ -730,8 +925,8 @@ function registrarServiceWorker() {
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('✅ Service Worker registrado'))
-                .catch(err => console.log('❌ Error SW:', err));
+                .then(reg => console.log('Service Worker registrado'))
+                .catch(err => console.log('Error SW:', err));
         });
     }
 }
@@ -751,8 +946,8 @@ function crearOverlayEscaneo() {
     const instructions = document.createElement('div');
     instructions.className = 'scanning-instructions';
     instructions.textContent = currentAction === 'registro' ? 
-        '📱 Escanea el QR del empleado para REGISTRARLO' : 
-        '🎯 Coloca el código QR dentro del recuadro';
+        'Escanea el QR del empleado para REGISTRARLO' : 
+        'Coloca el código QR dentro del recuadro';
     
     body.appendChild(overlay);
     body.appendChild(instructions);
@@ -787,7 +982,7 @@ async function iniciarEscaneo() {
         });
         
         await video.play();
-        console.log('✅ Video reproduciendo');
+        console.log('Video reproduciendo');
         
         scanningActive = true;
         realizarEscaneo();
@@ -800,7 +995,7 @@ async function iniciarEscaneo() {
         }, SCAN_INTERVAL);
         
     } catch (error) {
-        console.error('❌ Error:', error);
+        console.error('Error:', error);
         mostrarAlertaError('No se pudo acceder a la cámara. Verifica los permisos.');
         detenerEscaneo();
     }
@@ -823,7 +1018,7 @@ function realizarEscaneo() {
         const code = jsQR(imageData.data, width, height, { inversionAttempts: "dontInvert" });
         
         if (code) {
-            console.log('✅ QR detectado:', code.data);
+            console.log('QR detectado:', code.data);
             procesarResultado(code.data);
         }
     } catch (error) {
@@ -846,9 +1041,7 @@ function procesarResultado(data) {
     if (instructions) instructions.remove();
     body.classList.remove('scanning-active');
     
-    if (window.navigator && window.navigator.vibrate) {
-        window.navigator.vibrate(200);
-    }
+    vibrar();
     
     videoContainer.style.display = 'none';
     
@@ -897,22 +1090,25 @@ function procesarRegistroEmpleado(qrData, nombre, cedula, institucion, tipo) {
     const empleadoExistente = registeredEmployees.find(emp => emp.cedula === cedula);
     
     if (empleadoExistente) {
-        mostrarAlertaError(`⚠️ EMPLEADO YA REGISTRADO\n\nNombre: ${empleadoExistente.nombre}\nCédula: ${cedula}`);
+        mostrarAlertaError(`EMPLEADO YA REGISTRADO\n\nNombre: ${empleadoExistente.nombre}\nCédula: ${cedula}`);
         mostrarAdminMenu();
         return;
     }
     
     const nuevoEmpleado = {
         cedula: cedula,
+        cedulaNormalizada: normalizarCedula(cedula),
         nombre: nombre,
         institucion: institucion,
         fechaRegistro: new Date().toISOString()
     };
-    
+
     registeredEmployees.push(nuevoEmpleado);
     guardarEmpleados();
+
+    vibrar();
     
-    mostrarAlertaExito(`✅ EMPLEADO REGISTRADO\n\nNombre: ${nombre}\nCédula: ${cedula}\nInstitución: ${institucion}`);
+    mostrarAlertaExito(`EMPLEADO REGISTRADO\n\nNombre: ${nombre}\nCédula: ${cedula}\nInstitución: ${institucion}`);
     mostrarAdminMenu();
 }
 
@@ -929,10 +1125,13 @@ function procesarAsistencia(qrData, nombre, cedula, institucion, tipo) {
         return;
     }
     
-    const empleadoRegistrado = registeredEmployees.find(emp => emp.cedula === cedula);
+    const empleadoRegistrado = registeredEmployees.find(emp => 
+        emp.cedula === cedula || 
+        emp.cedulaNormalizada === normalizarCedula(cedula)
+    );
     
     if (!empleadoRegistrado) {
-        mostrarAlertaError(`❌ EMPLEADO NO REGISTRADO\n\nCédula: ${cedula}\n\nDebe registrarse primero en el menú ADMINISTRADOR.`);
+        mostrarAlertaError(`EMPLEADO NO REGISTRADO\n\nCédula: ${cedula}\n\nDebe registrarse primero en el menú ADMINISTRADOR.`);
         mostrarPantallaPrincipal();
         return;
     }
@@ -1037,7 +1236,7 @@ function mostrarAlertaInfo(mensaje) {
 }
 
 function detenerEscaneo() {
-    console.log('🛑 Deteniendo escaneo...');
+    console.log('Deteniendo escaneo...');
     scanningActive = false;
     
     if (scanTimeout) {
@@ -1062,11 +1261,236 @@ function detenerEscaneo() {
     body.classList.remove('scanning-active');
     videoContainer.style.display = 'none';
     
-    // Volver a la pantalla correcta según la acción
     if (currentAction === 'registro') {
         mostrarAdminMenu();
     } else {
         mostrarPantallaPrincipal();
+    }
+}
+
+// ========== FUNCIONES PARA VALIDAR ASISTENCIA ==========
+function puedeMarcarAsistencia(cedula, accionDeseada) {
+    // Obtener el último registro del empleado
+    const registrosEmpleado = attendanceHistory.filter(r => r.cedula === cedula);
+    
+    if (registrosEmpleado.length === 0) {
+        // Si no tiene registros, puede marcar entrada
+        if (accionDeseada === 'entrada') return { allowed: true };
+        if (accionDeseada === 'salida') return { allowed: false, message: 'No tiene registros previos. Debe marcar ENTRADA primero.' };
+    }
+    
+    const ultimoRegistro = registrosEmpleado[registrosEmpleado.length - 1];
+    const ultimaAccion = ultimoRegistro.accion;
+    
+    if (accionDeseada === 'entrada') {
+        if (ultimaAccion === 'entrada') {
+            return { 
+                allowed: false, 
+                message: `Ya marcó ENTRADA a las ${new Date(ultimoRegistro.timestamp).toLocaleTimeString('es-ES')}\nDebe marcar SALIDA antes de una nueva ENTRADA.`
+            };
+        }
+        return { allowed: true };
+    }
+    
+    if (accionDeseada === 'salida') {
+        if (ultimaAccion === 'salida') {
+            return { 
+                allowed: false, 
+                message: `Ya marcó SALIDA a las ${new Date(ultimoRegistro.timestamp).toLocaleTimeString('es-ES')}\nLa próxima acción debe ser ENTRADA.`
+            };
+        }
+        return { allowed: true };
+    }
+    
+    return { allowed: true };
+}
+
+// ========== FUNCIONES PARA MARCAR POR CÉDULA ==========
+function mostrarCedulaScreen() {
+    ocultarTodasPantallas();
+    currentCedula = '';
+    currentCedulaEmployee = null;
+    if (cedulaInput) cedulaInput.value = '';
+    cedulaScreen.style.display = 'flex';
+    // Enfocar automáticamente el input para abrir el teclado
+    setTimeout(() => {
+        if (cedulaInput) cedulaInput.focus();
+    }, 100);
+}
+
+function cerrarCedulaScreen() {
+    cedulaScreen.style.display = 'none';
+    cedulaActionScreen.style.display = 'none';
+    currentCedula = '';
+    currentCedulaEmployee = null;
+    if (cedulaInput) cedulaInput.value = '';
+    mostrarPantallaPrincipal();
+}
+
+function verificarCedula() {
+    // Obtener el valor actual del input
+    currentCedula = cedulaInput ? cedulaInput.value : '';
+    
+    if (!currentCedula || currentCedula.trim() === '') {
+        mostrarAlertaError('Ingrese una cédula válida');
+        return;
+    }
+
+    const empleado = registeredEmployees.find(emp => 
+        emp.cedula === currentCedula || 
+        emp.cedulaNormalizada === normalizarCedula(currentCedula)
+    );
+    
+    if (!empleado) {
+        mostrarAlertaError(`EMPLEADO NO REGISTRADO\n\nCédula: ${currentCedula}\n\nDebe registrarse primero en el menú ADMINISTRADOR.`);
+        return;
+    }
+    
+    currentCedulaEmployee = empleado;
+
+    vibrar();
+    
+    // Obtener último registro del empleado
+    const registrosEmpleado = attendanceHistory.filter(r => r.cedula === currentCedula);
+    const ultimoRegistro = registrosEmpleado.length > 0 ? registrosEmpleado[registrosEmpleado.length - 1] : null;
+    
+    let ultimaAccionHTML = '';
+    if (ultimoRegistro) {
+        const fechaUltimo = new Date(ultimoRegistro.timestamp);
+        const accionClass = ultimoRegistro.accion === 'entrada' ? 'last-action-entrada' : 'last-action-salida';
+        const accionTexto = ultimoRegistro.accion === 'entrada' ? 'ENTRADA' : 'SALIDA';
+        ultimaAccionHTML = `
+            <div class="last-action">
+                Último registro: <strong class="${accionClass}">${accionTexto}</strong><br>
+                ${fechaUltimo.toLocaleDateString('es-ES')} - ${fechaUltimo.toLocaleTimeString('es-ES')}
+            </div>
+        `;
+    } else {
+        ultimaAccionHTML = `<div class="last-action last-action-none">Sin registros previos</div>`;
+    }
+    
+    if (cedulaEmployeeInfo) {
+        cedulaEmployeeInfo.innerHTML = `
+            <div class="employee-name">${empleado.nombre}</div>
+            <div class="employee-id">Cédula: ${empleado.cedula}</div>
+            <div class="employee-institution">${empleado.institucion || 'Hospital Ernesto Segundo Paolini'}</div>
+            ${ultimaAccionHTML}
+        `;
+    }
+    
+    cedulaScreen.style.display = 'none';
+    cedulaActionScreen.style.display = 'flex';
+}
+
+async function marcarAsistenciaPorCedula(accion) {
+    if (!currentCedulaEmployee) {
+        mostrarAlertaError('Error: No hay empleado seleccionado');
+        cerrarCedulaScreen();
+        return;
+    }
+    
+    // Validar si puede marcar esta acción
+    const validacion = puedeMarcarAsistencia(currentCedulaEmployee.cedula, accion);
+    
+    if (!validacion.allowed) {
+        mostrarAlertaError(validacion.message);
+        // Regresar a la pantalla de acción para que pueda elegir la correcta
+        cedulaActionScreen.style.display = 'flex';
+        return;
+    }
+    
+    const ahora = new Date();
+    const fechaFormateada = ahora.toLocaleDateString('es-ES');
+    const horaFormateada = ahora.toLocaleTimeString('es-ES');
+    
+    const registro = {
+        nombre: currentCedulaEmployee.nombre,
+        cedula: currentCedulaEmployee.cedula,
+        accion: accion,
+        timestamp: ahora.toISOString(),
+        metodo: 'cedula' // Para saber que fue marcado por cédula
+    };
+    
+    attendanceHistory.push(registro);
+    guardarHistorial();
+
+    vibrar();
+    
+    const accionTexto = accion === 'entrada' ? 'ENTRADA' : 'SALIDA';
+    const colorAccion = accion === 'entrada' ? '#4CAF50' : '#f44336';
+    
+    resultContainer.style.display = 'flex';
+    scanResult.innerHTML = `
+        <div class="result-card">
+            <div class="result-header" style="background: ${colorAccion};">
+                <span class="result-action-text">${accionTexto}</span>
+            </div>
+            <div class="result-body">
+                <div class="result-field">
+                    <span class="field-label">NOMBRES:</span>
+                    <span class="field-value">${currentCedulaEmployee.nombre}</span>
+                </div>
+                <div class="result-field">
+                    <span class="field-label">CEDULA:</span>
+                    <span class="field-value">${currentCedulaEmployee.cedula}</span>
+                </div>
+                <div class="result-field">
+                    <span class="field-label">FECHA:</span>
+                    <span class="field-value">${fechaFormateada}</span>
+                </div>
+                <div class="result-field">
+                    <span class="field-label">HORA:</span>
+                    <span class="field-value result-time">${horaFormateada}</span>
+                </div>
+                <div class="result-field">
+                    <span class="field-label">MÉTODO:</span>
+                    <span class="field-value">Marcado por cédula</span>
+                </div>
+            </div>
+            <div class="result-footer">
+                <button id="back-to-home-from-cedula" class="btn result-home-btn">← VOLVER AL INICIO</button>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('back-to-home-from-cedula').addEventListener('click', () => {
+        resultContainer.style.display = 'none';
+        cerrarCedulaScreen();
+    });
+    
+    // Limpiar variables
+    currentCedulaEmployee = null;
+    currentCedula = '';
+    if (cedulaInput) cedulaInput.value = '';
+}
+
+// ========== FUNCIONES DE VIBRACIÓN ==========
+function cargarConfiguracion() {
+    const savedVibration = localStorage.getItem('vibrationEnabled');
+    if (savedVibration !== null) {
+        vibrationEnabled = savedVibration === 'true';
+    }
+    
+    const toggleCheckbox = document.getElementById('vibration-toggle');
+    const vibrationStatus = document.getElementById('vibration-status');
+    
+    if (toggleCheckbox) {
+        toggleCheckbox.checked = vibrationEnabled;
+        if (vibrationStatus) {
+            vibrationStatus.textContent = vibrationEnabled ? 'Activada' : 'Desactivada';
+            vibrationStatus.style.color = vibrationEnabled ? 'var(--success)' : 'var(--danger)';
+        }
+        
+        toggleCheckbox.addEventListener('change', (e) => {
+            vibrationEnabled = e.target.checked;
+            localStorage.setItem('vibrationEnabled', vibrationEnabled);
+            if (vibrationStatus) {
+                vibrationStatus.textContent = vibrationEnabled ? 'Activada' : 'Desactivada';
+                vibrationStatus.style.color = vibrationEnabled ? 'var(--success)' : 'var(--danger)';
+            }
+            // Vibrar al cambiar para feedback
+            if (vibrationEnabled) vibrar();
+        });
     }
 }
 

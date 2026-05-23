@@ -243,6 +243,13 @@ body {
     background: rgba(255, 255, 255, 0.05); 
     color: var(--text-main); 
     border: 1px solid var(--glass-border); 
+    margin-top: 15px;
+}
+
+.btn-secondary-cancel{ 
+    background: rgba(255, 255, 255, 0.05); 
+    color: var(--text-main); 
+    border: 1px solid var(--glass-border); 
 }
 
 /* Tablas */
@@ -554,6 +561,21 @@ body.scanning-active .fullscreen-panel {
     border: none !important;
 }
 
+.security-question-box {
+    background: rgba(14, 165, 233, 0.1);
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    transition: all 0.3s ease;
+}
+
+.security-question-box:hover {
+    background: rgba(14, 165, 233, 0.15);
+    border-color: rgba(14, 165, 233, 0.5);
+}
+
+#recovered-password {
+    animation: fadeIn 0.5s ease-out;
+}
+
 /* =========================================
    ALERTAS NATIVAS (MODALES)
 ========================================= */
@@ -614,7 +636,113 @@ body.scanning-active .fullscreen-panel {
     background: linear-gradient(135deg, var(--danger), #dc2626);
 }
 
-/* Animaciones extras */
+/* =========================================
+   SPLASH SCREEN
+========================================= */
+
+.splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeOutSplash 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation-delay: 5s;
+}
+
+.splash-content {
+    text-align: center;
+    padding: 20px;
+    animation: pulse 1.5s ease-in-out;
+}
+
+.splash-image {
+    max-width: 180px;
+    max-height: 180px;
+    width: auto;
+    height: auto;
+    margin-bottom: 30px;
+    border-radius: 100px;
+    box-shadow: 0 10px 40px rgba(14, 165, 233, 0.3);
+    animation: zoomIn 1s ease-out;
+}
+
+.splash-text {
+    color: var(--text-main);
+    font-size: 16px;
+    margin-top: 20px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.splash-subtext {
+    color: var(--text-dim);
+    font-size: 12px;
+    margin-top: 8px;
+    font-weight: 400;
+}
+
+.splash-loader {
+    width: 200px;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    margin: 20px auto 0;
+    overflow: hidden;
+}
+
+.loader-bar {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    border-radius: 10px;
+    animation: loading 1.8s ease-out forwards;
+}
+
+/* Animaciones */
+@keyframes loading {
+    0% { width: 0%; }
+    30% { width: 30%; }
+    60% { width: 70%; }
+    100% { width: 100%; }
+}
+
+@keyframes zoomIn {
+    from {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+@keyframes fadeOutSplash {
+    0% {
+        opacity: 1;
+        visibility: visible;
+    }
+    100% {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
 @keyframes slideUp {
     from { transform: translateY(100%); }
     to { transform: translateY(0); }
@@ -628,6 +756,17 @@ body.scanning-active .fullscreen-panel {
 @keyframes scan {
     0% { top: 0; }
     100% { top: 100%; }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Área Segura Mobile */
@@ -664,6 +803,15 @@ body.scanning-active .fullscreen-panel {
         height: 56px;
         font-size: 15px;
     }
+    
+    .splash-image {
+        max-width: 140px;
+        max-height: 140px;
+    }
+    
+    .splash-text {
+        font-size: 14px;
+    }
 }
 
 /* Scroll personalizado */
@@ -678,4 +826,180 @@ body.scanning-active .fullscreen-panel {
 ::-webkit-scrollbar-thumb {
     background: var(--accent);
     border-radius: 3px;
+}
+
+/* =========================================
+   MARCAR POR CÉDULA - VERSIÓN CON TECLADO NATIVO
+========================================= */
+
+.cedula-container {
+    background: var(--bg-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 28px;
+    padding: 32px 24px;
+    width: 100%;
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.cedula-display {
+    margin-bottom: 32px;
+}
+
+.cedula-input-field {
+    width: 100%;
+    height: 70px;
+    background: rgba(15, 23, 42, 0.5);
+    border: 2px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 0 20px;
+    color: white;
+    font-size: 28px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+.cedula-input-field:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+.cedula-input-field::placeholder {
+    font-size: 16px;
+    letter-spacing: normal;
+    color: var(--text-dim);
+    font-weight: normal;
+}
+
+.cedula-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.employee-info-card {
+    background: rgba(14, 165, 233, 0.15);
+    border: 1px solid rgba(14, 165, 233, 0.3);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.employee-info-card .employee-name {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-main);
+}
+
+.employee-info-card .employee-id {
+    font-size: 16px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+}
+
+.employee-info-card .employee-institution {
+    font-size: 14px;
+    color: var(--accent);
+}
+
+.employee-info-card .last-action {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--glass-border);
+    font-size: 14px;
+}
+
+.last-action-entrada {
+    color: var(--success);
+}
+
+.last-action-salida {
+    color: var(--danger);
+}
+
+.last-action-none {
+    color: var(--text-dim);
+}
+
+/* =========================================
+   TOGGLE DE VIBRACIÓN
+========================================= */
+
+.config-toggle {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.toggle-label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.toggle-label span:first-child {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.toggle-status {
+    font-size: 12px;
+    color: var(--success);
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 52px;
+    height: 28px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.2);
+    transition: 0.3s;
+    border-radius: 34px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: var(--success);
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(24px);
 }

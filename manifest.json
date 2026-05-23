@@ -1,13 +1,14 @@
 {
-    "name": "Mi Primera PWA",
-    "short_name": "PWA Test",
-    "description": "Una aplicación web progresiva de prueba",
+    "name": "Hospital Ernesto Segundo Paolini - Control de Asistencia",
+    "short_name": "Asistencia Hospital",
+    "description": "Sistema de control de asistencia para el Hospital Ernesto Segundo Paolini",
     "start_url": "index.html",
     "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#0d6efd",
+    "background_color": "#0f172a",
+    "theme_color": "#0ea5e9",
     "orientation": "portrait",
     "scope": ".",
+    "splash_pages": null,
     "icons": [
         {
             "src": "icon-72x72.png",
